@@ -28,6 +28,15 @@
 #include <nuttx/power/pm.h>
 #include <arch/board/board.h>
 
+#ifdef CONFIG_PM
+
+#if defined(CONFIG_ESPRESSIF_SPI) && defined(CONFIG_SPI_SLAVE)
+#include "esp_gpio.h"
+#endif
+
+#include "esp_sleep.h"
+#include "esp_pm.h"
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -85,3 +94,26 @@ void esp_pm_lockrelease(void) {
 uint32_t esp_pm_lockstatus(void) {
   return pm_wakelock;
 }
+
+#if defined(CONFIG_ESPRESSIF_SPI) && defined(CONFIG_SPI_SLAVE)
+/**
+ * @brief Initialize power management
+ *
+ * This function initializes the power management system.
+ *
+ * @note This function should be called during system initialization.
+ * @warning This function is not thread-safe and should be called only once.
+ */
+
+void esp_pm_init(void) {
+  gpio_wakeup_enable(CONFIG_ESPRESSIF_SPI2_CSPIN, ONLOW);
+  esp_sleep_enable_gpio_wakeup();
+}
+
+bool esp_pm_cs_asserted(void)
+{
+  return esp_gpioread(CONFIG_ESPRESSIF_SPI2_CSPIN);
+}
+
+#endif // CONFIG_ESPRESSIF_SPI && CONFIG_SPI_SLAVE
+#endif // CONFIG_PM

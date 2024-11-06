@@ -29,7 +29,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "hal/gpio_types.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -311,39 +310,25 @@ void esp_gpioirqdisable(int irq);
 #  define esp_gpioirqdisable(irq)
 #endif
 
-/****************************************************************************
- * Name: esp_gpio_sleep_set_direction
+/**
+ * @brief Enable wakeup functionality for a specific GPIO pin.
  *
- * Description:
- *   Set the direction of a GPIO pin during sleep mode.
+ * This function configures the specified GPIO pin to trigger a wakeup event
+ * based on the given interrupt type. It is typically used to wake up the system
+ * from a low-power state when a specific condition is met on the GPIO pin.
  *
- * Input Parameters:
- *   gpio_num      - GPIO pin number to be configured.
- *   mode          - Direction mode to be set (INPUT, OUTPUT, etc.).
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
+ * @param gpio_num The GPIO pin number to be configured for wakeup.
+ * @param intr_type The type of interrupt that will trigger the wakeup event.
+ *             This parameter can be one of the following values:
+ *             - GPIO_INTR_DISABLE: Disable GPIO interrupt
+ *             - GPIO_INTR_POSEDGE: Interrupt on rising edge
+ *             - GPIO_INTR_NEGEDGE: Interrupt on falling edge
+ *             - GPIO_INTR_ANYEDGE: Interrupt on both rising and falling edges
+ *             - GPIO_INTR_LOW_LEVEL: Interrupt on low level
+ *             - GPIO_INTR_HIGH_LEVEL: Interrupt on high level
+ */
 
-void esp_gpio_sleep_set_direction(uint32_t gpio_num, gpio_mode_t mode);
-
-/****************************************************************************
- * Name: gpio_sleep_set_pull_mode
- *
- * Description:
- *   Set the pull mode of a GPIO pin during sleep mode.
- *
- * Input Parameters:
- *   gpio_num      - GPIO pin number to be configured.
- *   pull          - Pull mode to be set (PULLUP, PULLDOWN, etc.).
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
+void gpio_wakeup_enable(uint32_t gpio_num, gpio_intrtype_t intr_type);
 
 #ifdef __cplusplus
 }

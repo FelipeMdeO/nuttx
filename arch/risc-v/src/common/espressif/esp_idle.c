@@ -29,9 +29,10 @@
 #include <nuttx/board.h>
 #include <nuttx/spinlock.h>
 
+#ifdef CONFIG_PM
 #include "esp_sleep.h"
-#include "esp_gpio.h"
 #include "esp_pm.h"
+#endif
 
 #ifdef CONFIG_RTC_DRIVER
 #include "esp_hr_timer.h"
@@ -52,6 +53,7 @@
 
 
 #define AUTO_SLEEP
+#define DEBUG_AUTOSLEEP
 
 /****************************************************************************
  * Public Functions
@@ -92,27 +94,42 @@
 static void up_idlepm(void)
 { 
   irqstate_t flags;
-  struct   timespec ts;
-  int64_t os_start_us;
-  uint64_t os_end_us;
-  uint64_t hw_start_us;
-  uint64_t hw_end_us;
   flags = spin_lock_irqsave(NULL);
+  bool cs_pin;
 
-  uint64_t os_idle_us = up_get_idletime();
-  uint64_t sleep_us = os_idle_us;
+  uint64_t sleep_us = up_get_idletime();
 
-  if (sleep_us > EXPECTED_IDLE_TIME_US)
+  /* Only sleep if cs i high */
+  /**
+   * NOTE: In this current implementation during SPI communication
+   * MCU will be locked to receive data.
+   */
+
+  if ( (esp_pm_cs_asserted() == 1) && (sleep_us > EXPECTED_IDLE_TIME_US) )
     {
       sleep_us -= EARLY_WAKEUP_US;
       esp_wait_tx_done();
       esp_sleep_enable_timer_wakeup(sleep_us);
       esp_light_sleep_start();
+
+      if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO)
+        {
+#ifdef DEBUG_AUTOSLEEP
+          printf("Wake up from gpio\n");
+#endif
+        }
+
+      else 
+        {
+#ifdef DEBUG_AUTOSLEEP
+         printf("Wake up from timer\n"); 
+#endif
+        }
     }
     
     spin_unlock_irqrestore(NULL, flags);
-
 }
+
 #else
 #  define up_idlepm() 
 #endif

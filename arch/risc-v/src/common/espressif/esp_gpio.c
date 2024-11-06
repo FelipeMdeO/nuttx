@@ -460,75 +460,28 @@ void esp_gpioirqdisable(int irq)
 }
 #endif
 
-/****************************************************************************
- * Name: esp_gpio_sleep_set_direction
+/**
+ * @brief Enable wakeup functionality for a specific GPIO pin.
  *
- * Description:
- *   Set the direction of a GPIO pin during sleep mode.
+ * This function configures the specified GPIO pin to trigger a wakeup event
+ * based on the given interrupt type. It is typically used to wake up the system
+ * from a low-power state when a specific condition is met on the GPIO pin.
  *
- * Input Parameters:
- *   gpio_num      - GPIO pin number to be configured.
- *   mode          - Direction mode to be set (INPUT, OUTPUT, etc.).
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void esp_gpio_sleep_set_direction(uint32_t gpio_num, gpio_mode_t mode)
+ * @param gpio_num The GPIO pin number to be configured for wakeup.
+ * @param mode The type of interrupt that will trigger the wakeup event.
+ *             This parameter can be one of the following values:
+ *             - GPIO_INTR_DISABLE: Disable GPIO interrupt
+ *             - GPIO_INTR_POSEDGE: Interrupt on rising edge
+ *             - GPIO_INTR_NEGEDGE: Interrupt on falling edge
+ *             - GPIO_INTR_ANYEDGE: Interrupt on both rising and falling edges
+ *             - GPIO_INTR_LOW_LEVEL: Interrupt on low level
+ *             - GPIO_INTR_HIGH_LEVEL: Interrupt on high level
+ */
+void gpio_wakeup_enable(uint32_t gpio_num, gpio_intrtype_t intr_type)
 {
-    if (mode & GPIO_MODE_DEF_INPUT) {
-      gpio_hal_sleep_input_enable(&g_gpio_hal, gpio_num);
-    } else {
-      gpio_hal_sleep_input_disable(&g_gpio_hal, gpio_num);
-    }
-
-    if (mode & GPIO_MODE_DEF_OUTPUT) {
-      gpio_hal_sleep_output_enable(&g_gpio_hal, gpio_num);
-    } else {
-      gpio_hal_sleep_output_disable(&g_gpio_hal, gpio_num);
-    }
-}
-
-/****************************************************************************
- * Name: gpio_sleep_set_pull_mode
- *
- * Description:
- *   Set the pull mode of a GPIO pin during sleep mode.
- *
- * Input Parameters:
- *   gpio_num      - GPIO pin number to be configured.
- *   pull          - Pull mode to be set (PULLUP, PULLDOWN, etc.).
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
-{
-  switch (pull) {
-    case GPIO_PULLUP_ONLY:
-        gpio_hal_sleep_pulldown_dis(&g_gpio_hal, gpio_num);
-        gpio_hal_sleep_pullup_en(&g_gpio_hal, gpio_num);
-        break;
-
-    case GPIO_PULLDOWN_ONLY:
-        gpio_hal_sleep_pulldown_en(&g_gpio_hal, gpio_num);
-        gpio_hal_sleep_pullup_dis(&g_gpio_hal, gpio_num);
-        break;
-
-    case GPIO_PULLUP_PULLDOWN:
-        gpio_hal_sleep_pulldown_en(&g_gpio_hal, gpio_num);
-        gpio_hal_sleep_pullup_en(&g_gpio_hal, gpio_num);
-        break;
-
-    case GPIO_FLOATING:
-        gpio_hal_sleep_pulldown_dis(&g_gpio_hal, gpio_num);
-        gpio_hal_sleep_pullup_dis(&g_gpio_hal, gpio_num);
-        break;
-
-    default:
-        break;
-    }
+  gpio_hal_set_intr_type(&g_gpio_hal, gpio_num, intr_type);
+  gpio_hal_wakeup_enable(&g_gpio_hal, gpio_num);
+//#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+  gpio_hal_sleep_sel_dis(&g_gpio_hal, gpio_num);
+//#endif
 }

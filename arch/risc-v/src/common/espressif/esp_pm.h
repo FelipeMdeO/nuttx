@@ -81,6 +81,33 @@ void esp_pm_lockrelease(void);
 
 uint32_t esp_pm_lockstatus(void);
 
+
+#if defined(CONFIG_ESPRESSIF_SPI) && defined(CONFIG_SPI_SLAVE)
+
+/**
+ * @brief Initialize power management
+ *
+ * This function initializes the power management system.
+ *
+ * @note This function should be called during system initialization.
+ * @warning This function is not thread-safe and should be called only once.
+ */
+
+void esp_pm_init(void);
+
+/**
+ * @brief Checks if the power management control signal is asserted.
+ *
+ * This function verifies whether the power management control signal (CS) is asserted.
+ * It is typically used to determine if the system should enter a low-power state or
+ * perform other power management related tasks.
+ *
+ * @return true if the power management control signal is asserted, false otherwise.
+ */
+bool esp_pm_cs_asserted(void);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif

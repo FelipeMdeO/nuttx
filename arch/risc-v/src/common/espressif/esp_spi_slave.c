@@ -55,6 +55,10 @@
 #include "esp_dma.h"
 #endif
 
+#ifdef CONFIG_PM
+#include "esp_pm.h"
+#endif
+
 #include "riscv_internal.h"
 
 /****************************************************************************
@@ -753,6 +757,10 @@ static void spislave_initialize(struct spi_slave_ctrlr_s *ctrlr)
 #else
   priv->ctx.dmadesc_n = 0;
   priv->ctx.use_dma = 0;
+#endif
+
+#ifdef CONFIG_PM
+  esp_pm_init();
 #endif
 }
 
