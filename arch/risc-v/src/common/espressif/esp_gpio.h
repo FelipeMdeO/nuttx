@@ -29,6 +29,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "hal/gpio_types.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -309,6 +310,40 @@ void esp_gpioirqdisable(int irq);
 #else
 #  define esp_gpioirqdisable(irq)
 #endif
+
+/****************************************************************************
+ * Name: esp_gpio_sleep_set_direction
+ *
+ * Description:
+ *   Set the direction of a GPIO pin during sleep mode.
+ *
+ * Input Parameters:
+ *   gpio_num      - GPIO pin number to be configured.
+ *   mode          - Direction mode to be set (INPUT, OUTPUT, etc.).
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void esp_gpio_sleep_set_direction(uint32_t gpio_num, gpio_mode_t mode);
+
+/****************************************************************************
+ * Name: gpio_sleep_set_pull_mode
+ *
+ * Description:
+ *   Set the pull mode of a GPIO pin during sleep mode.
+ *
+ * Input Parameters:
+ *   gpio_num      - GPIO pin number to be configured.
+ *   pull          - Pull mode to be set (PULLUP, PULLDOWN, etc.).
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
 #ifdef __cplusplus
 }
