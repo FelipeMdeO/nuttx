@@ -43,6 +43,9 @@ config ESP_AUTO_SLEEP
 	select PM
 	select ESP_RT_TIMER
 	select ESP_TICKLESS
+	select SCHED_TICKLESS
+	select RTC_DRIVER
+	select RTC
 	---help---
 		Enable ESP Auto-sleep
 

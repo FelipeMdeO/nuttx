@@ -81,9 +81,6 @@ void esp_pm_lockrelease(void);
 
 uint32_t esp_pm_lockstatus(void);
 
-
-#if defined(CONFIG_ESPRESSIF_SPI) && defined(CONFIG_SPI_SLAVE)
-
 /**
  * @brief Initialize power management
  *
@@ -94,8 +91,6 @@ uint32_t esp_pm_lockstatus(void);
  */
 
 void esp_pm_init(void);
-
-#endif
 
 #ifdef __cplusplus
 }

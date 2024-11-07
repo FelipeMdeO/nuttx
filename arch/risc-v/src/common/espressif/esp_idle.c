@@ -88,7 +88,7 @@
  *   Perform IDLE state power management.
  *
  ****************************************************************************/
-#if defined(CONFIG_PM) && defined(ESP_AUTO_SLEEP)
+#if defined(CONFIG_PM)
 
 static void up_idlepm(void)
 { 

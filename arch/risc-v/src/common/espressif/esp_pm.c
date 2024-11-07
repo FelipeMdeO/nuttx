@@ -31,11 +31,7 @@
 #ifdef CONFIG_PM
 
 #include "esp_sleep.h"
-
-#if defined(CONFIG_ESPRESSIF_SPI) && defined(CONFIG_SPI_SLAVE)
 #include "esp_gpio.h"
-#endif
-
 #include "esp_pm.h"
 
 /****************************************************************************
@@ -103,7 +99,6 @@ uint32_t IRAM_ATTR esp_pm_lockstatus(void)
   return pm_wakelock;
 }
 
-#if defined(CONFIG_ESPRESSIF_SPI) && defined(CONFIG_SPI_SLAVE)
 /**
  * @brief Initialize power management
  *
@@ -121,5 +116,4 @@ void esp_pm_init(void)
   esp_sleep_enable_gpio_wakeup();
 }
 
-#endif // CONFIG_ESPRESSIF_SPI && CONFIG_SPI_SLAVE
 #endif // CONFIG_PM
