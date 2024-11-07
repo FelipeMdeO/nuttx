@@ -40,7 +40,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#define WAKE_UP_GPIO 14
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -67,7 +67,8 @@ static _Atomic uint32_t pm_wakelock = 0;
  *
  ****************************************************************************/
 
-void esp_pm_lockacquire(void) {
+void IRAM_ATTR esp_pm_lockacquire(void)
+{
   ++pm_wakelock;
 }
 
@@ -79,8 +80,13 @@ void esp_pm_lockacquire(void) {
  *
  ****************************************************************************/
 
-void esp_pm_lockrelease(void) {
-  --pm_wakelock;
+void IRAM_ATTR esp_pm_lockrelease(void)
+{
+  if (pm_wakelock > 0)
+  {
+    --pm_wakelock;
+  }
+
 }
 
 /****************************************************************************
@@ -91,7 +97,8 @@ void esp_pm_lockrelease(void) {
  *
  ****************************************************************************/
 
-uint32_t esp_pm_lockstatus(void) {
+uint32_t IRAM_ATTR esp_pm_lockstatus(void)
+{
   return pm_wakelock;
 }
 
@@ -105,14 +112,12 @@ uint32_t esp_pm_lockstatus(void) {
  * @warning This function is not thread-safe and should be called only once.
  */
 
-void esp_pm_init(void) {
-  gpio_wakeup_enable(CONFIG_ESPRESSIF_SPI2_CSPIN, ONLOW);
-  esp_sleep_enable_gpio_wakeup();
-}
-
-bool esp_pm_cs_asserted(void)
+void esp_pm_init(void)
 {
-  return esp_gpioread(CONFIG_ESPRESSIF_SPI2_CSPIN);
+  esp_gpiowrite(WAKE_UP_GPIO, 1);
+  esp_configgpio(WAKE_UP_GPIO, INPUT_FUNCTION | PULLUP);
+  gpio_wakeup_enable(WAKE_UP_GPIO, ONLOW);
+  esp_sleep_enable_gpio_wakeup();
 }
 
 #endif // CONFIG_ESPRESSIF_SPI && CONFIG_SPI_SLAVE

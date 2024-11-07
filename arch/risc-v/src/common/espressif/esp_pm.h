@@ -95,17 +95,6 @@ uint32_t esp_pm_lockstatus(void);
 
 void esp_pm_init(void);
 
-/**
- * @brief Checks if the power management control signal is asserted.
- *
- * This function verifies whether the power management control signal (CS) is asserted.
- * It is typically used to determine if the system should enter a low-power state or
- * perform other power management related tasks.
- *
- * @return true if the power management control signal is asserted, false otherwise.
- */
-bool esp_pm_cs_asserted(void);
-
 #endif
 
 #ifdef __cplusplus

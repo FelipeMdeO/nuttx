@@ -53,7 +53,7 @@
 
 
 #define AUTO_SLEEP
-#define DEBUG_AUTOSLEEP
+#define DEBUG_AUTOSLEEP 0
 
 /****************************************************************************
  * Public Functions
@@ -95,39 +95,35 @@ static void up_idlepm(void)
 { 
   irqstate_t flags;
   flags = spin_lock_irqsave(NULL);
-  bool cs_pin;
 
-  uint64_t sleep_us = up_get_idletime();
-
-  /* Only sleep if cs i high */
-  /**
-   * NOTE: In this current implementation during SPI communication
-   * MCU will be locked to receive data.
-   */
-
-  if ( (esp_pm_cs_asserted() == 1) && (sleep_us > EXPECTED_IDLE_TIME_US) )
-    {
-      sleep_us -= EARLY_WAKEUP_US;
-      esp_wait_tx_done();
-      esp_sleep_enable_timer_wakeup(sleep_us);
-      esp_light_sleep_start();
-
-      if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO)
+  if ( esp_pm_lockstatus() == 0 )
+    {   
+      uint64_t sleep_us = up_get_idletime();
+      if ( (sleep_us > EXPECTED_IDLE_TIME_US) )
         {
-#ifdef DEBUG_AUTOSLEEP
-          printf("Wake up from gpio\n");
-#endif
-        }
+          sleep_us -= EARLY_WAKEUP_US;
+          esp_wait_tx_done();
+          esp_sleep_enable_timer_wakeup(sleep_us);
+          esp_light_sleep_start();
 
-      else 
-        {
-#ifdef DEBUG_AUTOSLEEP
-         printf("Wake up from timer\n"); 
-#endif
+          if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO)
+            {
+    #if DEBUG_AUTOSLEEP
+              printf("Wake up from gpio\n");
+              esp_wait_tx_done();
+    #endif
+            }
+
+          else 
+            {
+    #if DEBUG_AUTOSLEEP
+            printf("Wake up from timer\n"); 
+            esp_wait_tx_done();
+    #endif
+            }
         }
     }
-    
-    spin_unlock_irqrestore(NULL, flags);
+  spin_unlock_irqrestore(NULL, flags);
 }
 
 #else
@@ -148,12 +144,10 @@ void up_idle(void)
   /* This would be an appropriate place to put some MCU-specific logic to
    * sleep in a reduced power mode until an interrupt occurs to save power
    */
-  up_idlepm();
-
-  /* Perform IDLE mode power management */
-#ifndef AUTO_SLEEP
   asm("WFI");
-#endif /* AUTO_SLEEP */
+  
+  /* Perform IDLE mode power management */
+  up_idlepm();
 
 #endif
 }

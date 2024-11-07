@@ -481,7 +481,7 @@ void gpio_wakeup_enable(uint32_t gpio_num, gpio_intrtype_t intr_type)
 {
   gpio_hal_set_intr_type(&g_gpio_hal, gpio_num, intr_type);
   gpio_hal_wakeup_enable(&g_gpio_hal, gpio_num);
-//#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
   gpio_hal_sleep_sel_dis(&g_gpio_hal, gpio_num);
-//#endif
+#endif
 }
