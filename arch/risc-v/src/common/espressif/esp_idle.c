@@ -52,8 +52,6 @@
 #define EXPECTED_IDLE_TIME_US (10000)
 #define EARLY_WAKEUP_US       (200)
 
-
-#define AUTO_SLEEP
 #define DEBUG_AUTOSLEEP 0
 
 /****************************************************************************
@@ -90,7 +88,7 @@
  *   Perform IDLE state power management.
  *
  ****************************************************************************/
-#if defined(CONFIG_PM) && defined(AUTO_SLEEP)
+#if defined(CONFIG_PM) && defined(ESP_AUTO_SLEEP)
 
 static void up_idlepm(void)
 { 
