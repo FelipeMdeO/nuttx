@@ -30,11 +30,12 @@
 
 #ifdef CONFIG_PM
 
+#include "esp_sleep.h"
+
 #if defined(CONFIG_ESPRESSIF_SPI) && defined(CONFIG_SPI_SLAVE)
 #include "esp_gpio.h"
 #endif
 
-#include "esp_sleep.h"
 #include "esp_pm.h"
 
 /****************************************************************************

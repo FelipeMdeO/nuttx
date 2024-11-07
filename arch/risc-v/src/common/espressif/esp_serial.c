@@ -55,6 +55,10 @@
 #include "hal/uart_hal.h"
 #include "soc/clk_tree_defs.h"
 
+#ifdef CONFIG_PM
+#  include "esp_idle.h"
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -144,8 +148,9 @@ static bool esp_rxflowcontrol(uart_dev_t *dev,
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
+#ifdef CONFIG_PM
 static void *g_static_esp_uart_s = NULL;
+#endif
 
 #ifdef CONFIG_ESPRESSIF_UART
 
@@ -368,27 +373,6 @@ static void set_stop_length(const struct esp_uart_s *priv)
  *   Zero (OK) is returned.
  *
  ****************************************************************************/
-
-
-
-  /**
-   * @brief Checks if the global static pointer is NULL and returns if it is.
-   *
-   * This function verifies the state of the global static pointer `g_static_esp_uart_s`.
-   * If the pointer is NULL, the function returns immediately, preventing further
-   * execution.
-   */
-void esp_wait_tx_done(void)
-{
-  if (g_static_esp_uart_s != NULL)
-    {
-    struct esp_uart_s *priv = (struct esp_uart_s *)g_static_esp_uart_s;
-    while (!uart_hal_is_tx_idle(priv->hal))
-      {
-        asm("nop");
-      }
-    }
-}
 
 static int esp_setup(uart_dev_t *dev)
 {
@@ -1156,6 +1140,30 @@ void riscv_serialinit(void)
 #endif
 }
 
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: check_global_pointer
+ *
+ * Description:
+ *   Checks if the global static pointer is NULL and returns if it is.
+ *   This function verifies the state of the global static pointer
+ *   `g_static_esp_uart_s`. If the pointer is NULL, the function returns
+ *   immediately, preventing further execution.
+ *
+ ****************************************************************************/
+
+void esp_wait_tx_done(void)
+{
+  if (g_static_esp_uart_s != NULL)
+    {
+    struct esp_uart_s *priv = (struct esp_uart_s *)g_static_esp_uart_s;
+    while (!uart_hal_is_tx_idle(priv->hal))
+      {
+        asm("nop");
+      }
+    }
+}
+#endif
 /****************************************************************************
  * Name: up_putc
  *

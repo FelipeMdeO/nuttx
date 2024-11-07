@@ -32,6 +32,7 @@
 #ifdef CONFIG_PM
 #include "esp_sleep.h"
 #include "esp_pm.h"
+#include "esp_idle.h"
 #endif
 
 #ifdef CONFIG_RTC_DRIVER
