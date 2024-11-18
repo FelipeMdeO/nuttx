@@ -27,6 +27,21 @@
 #include <arch/board/board.h>
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
+#include <nuttx/spinlock.h>
+
+#ifdef CONFIG_PM
+#include "esp_sleep.h"
+#include "esp_pm.h"
+#include "esp_idle.h"
+#endif
+
+#ifdef CONFIG_RTC_DRIVER
+#include "esp_hr_timer.h"
+#endif
+
+#ifdef CONFIG_SCHED_TICKLESS
+#include "esp_tickless.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -55,6 +70,31 @@
  *
  ****************************************************************************/
 
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_idlepm
+ *
+ * Description:
+ *   Perform IDLE state power management.
+ *
+ ****************************************************************************/
+#if defined(CONFIG_PM)
+
+static void up_idlepm(void)
+{ 
+  uint64_t sleep_us = up_get_idletime();
+  esp_sleep_enable_timer_wakeup(sleep_us);
+  esp_light_sleep_start();
+}
+
+#else
+#  define up_idlepm() 
+#endif
+
+
 void up_idle(void)
 {
 #if defined(CONFIG_SUPPRESS_INTERRUPTS) || defined(CONFIG_SUPPRESS_TIMER_INTS)
@@ -64,11 +104,15 @@ void up_idle(void)
 
   nxsched_process_timer();
 #else
+
   /* This would be an appropriate place to put some MCU-specific logic to
    * sleep in a reduced power mode until an interrupt occurs to save power
    */
 
   asm("WFI");
+  
+  /* Perform IDLE mode power management */
+  up_idlepm();
 
 #endif
 }

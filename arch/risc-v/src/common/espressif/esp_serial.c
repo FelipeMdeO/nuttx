@@ -144,7 +144,6 @@ static bool esp_rxflowcontrol(uart_dev_t *dev,
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
 #ifdef CONFIG_ESPRESSIF_UART
 
 /* Operations */
