@@ -81,12 +81,19 @@
  *   Perform IDLE state power management.
  *
  ****************************************************************************/
+#define MIN_SLEEP_TIME_US 800
+#define LIGHT_SLEEP_EARLY_WAKEUP_US 100
+
 #if defined(CONFIG_PM)
 
 static void up_idlepm(void)
 { 
   uint64_t sleep_us = up_get_idletime();
-  esp_sleep_enable_timer_wakeup(sleep_us);
+  if (sleep_us < MIN_SLEEP_TIME_US)
+    {
+      return;
+    }
+  esp_sleep_enable_timer_wakeup(sleep_us - LIGHT_SLEEP_EARLY_WAKEUP_US);
   esp_light_sleep_start();
 }
 
