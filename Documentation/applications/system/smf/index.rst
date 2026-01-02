@@ -547,14 +547,6 @@ Differences from UML:
 2. Only external self-transitions are supported
 3. No explicit terminate pseudostate
 
-Visual Model
-============
-
-The following diagram illustrates a typical hierarchical SMF configuration.
-
-``STATE_PARENT`` owns two substates, with an initial transition to
-``STATE_CHILD_A``.
-
 Notes and Constraints
 =====================
 
