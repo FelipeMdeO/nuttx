@@ -59,43 +59,55 @@ int sim_gpio_initialize(void)
       return -ENOMEM;
     }
 
-  /* Register four pin drivers */
+  int ret;
+  int pin;
+  int act_count = CONFIG_IOEXPANDER_NPINS / 2;
 
-  /* Pin 0: an non-inverted, input pin */
+  /* Register pins: first half outputs (actuators), second half inputs
+   * (feedback).
+   */
 
-  IOEXP_SETDIRECTION(ioe, 0, IOEXPANDER_DIRECTION_IN);
-  IOEXP_SETOPTION(ioe, 0, IOEXPANDER_OPTION_INVERT,
-                  (void *)IOEXPANDER_VAL_NORMAL);
-  IOEXP_SETOPTION(ioe, 0, IOEXPANDER_OPTION_INTCFG,
-                  (void *)IOEXPANDER_VAL_DISABLE);
-  gpio_lower_half(ioe, 0, GPIO_INPUT_PIN, 0);
+  for (pin = 0; pin < CONFIG_IOEXPANDER_NPINS; pin++)
+    {
+      int direction = (pin < act_count) ? IOEXPANDER_DIRECTION_OUT
+                                        : IOEXPANDER_DIRECTION_IN;
+      enum gpio_pintype_e pintype = (pin < act_count) ? GPIO_OUTPUT_PIN
+                                                      : GPIO_INPUT_PIN;
 
-  /* Pin 1: an non-inverted, output pin */
+      ret = IOEXP_SETDIRECTION(ioe, pin, direction);
+      if (ret < 0)
+        {
+          gpioerr("ERROR: IOEXP_SETDIRECTION pin %d failed: %d\n",
+                  pin, ret);
+          return ret;
+        }
 
-  IOEXP_SETDIRECTION(ioe, 1, IOEXPANDER_DIRECTION_OUT);
-  IOEXP_SETOPTION(ioe, 1, IOEXPANDER_OPTION_INVERT,
-                  (void *)IOEXPANDER_VAL_NORMAL);
-  IOEXP_SETOPTION(ioe, 1, IOEXPANDER_OPTION_INTCFG,
-                  (void *)IOEXPANDER_VAL_DISABLE);
-  gpio_lower_half(ioe, 1, GPIO_OUTPUT_PIN, 1);
+      ret = IOEXP_SETOPTION(ioe, pin, IOEXPANDER_OPTION_INVERT,
+                            (void *)IOEXPANDER_VAL_NORMAL);
+      if (ret < 0 && ret != -ENOSYS)
+        {
+          gpioerr("ERROR: IOEXP_SETOPTION pin %d invert failed: %d\n",
+                  pin, ret);
+          return ret;
+        }
 
-  /* Pin 2: an non-inverted, edge interrupting pin */
+      ret = IOEXP_SETOPTION(ioe, pin, IOEXPANDER_OPTION_INTCFG,
+                            (void *)IOEXPANDER_VAL_DISABLE);
+      if (ret < 0 && ret != -ENOSYS)
+        {
+          gpioerr("ERROR: IOEXP_SETOPTION pin %d intcfg failed: %d\n",
+                  pin, ret);
+          return ret;
+        }
 
-  IOEXP_SETDIRECTION(ioe, 2, IOEXPANDER_DIRECTION_IN);
-  IOEXP_SETOPTION(ioe, 2, IOEXPANDER_OPTION_INVERT,
-                  (void *)IOEXPANDER_VAL_NORMAL);
-  IOEXP_SETOPTION(ioe, 2, IOEXPANDER_OPTION_INTCFG,
-                  (void *)IOEXPANDER_VAL_BOTH);
-  gpio_lower_half(ioe, 2, GPIO_INTERRUPT_PIN, 2);
-
-  /* Pin 3: a non-inverted, level interrupting pin */
-
-  IOEXP_SETDIRECTION(ioe, 3, IOEXPANDER_DIRECTION_IN);
-  IOEXP_SETOPTION(ioe, 3, IOEXPANDER_OPTION_INVERT,
-                  (void *)IOEXPANDER_VAL_NORMAL);
-  IOEXP_SETOPTION(ioe, 3, IOEXPANDER_OPTION_INTCFG,
-                  (void *)IOEXPANDER_VAL_HIGH);
-  gpio_lower_half(ioe, 3, GPIO_INTERRUPT_PIN, 3);
+      ret = gpio_lower_half(ioe, pin, pintype, pin);
+      if (ret < 0)
+        {
+          gpioerr("ERROR: gpio_lower_half pin %d failed: %d\n",
+                  pin, ret);
+          return ret;
+        }
+    }
 
   return 0;
 }

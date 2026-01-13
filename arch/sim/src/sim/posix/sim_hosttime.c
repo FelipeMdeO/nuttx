@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
@@ -37,7 +38,13 @@
  ****************************************************************************/
 
 static uint64_t g_start;
-static timer_t  g_timer;
+
+#ifdef __APPLE__
+/* macOS (Darwin) does not implement POSIX timer_create()/timer_settime(). */
+static bool g_timer_inited;
+#else
+static timer_t g_timer;
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -50,18 +57,28 @@ static timer_t  g_timer;
 int host_inittimer(void)
 {
   struct timespec tp;
+
+#ifndef __APPLE__
   struct sigevent sigev =
     {
       0
     };
+#endif
 
   clock_gettime(CLOCK_MONOTONIC, &tp);
 
   g_start = 1000000000ull * tp.tv_sec + tp.tv_nsec;
+
+#ifdef __APPLE__
+  /* Timer will be armed via setitimer() in host_settimer(). */
+  g_timer_inited = true;
+  return 0;
+#else
   sigev.sigev_notify = SIGEV_SIGNAL;
   sigev.sigev_signo  = SIGALRM;
 
   return timer_create(CLOCK_MONOTONIC, &sigev, &g_timer);
+#endif
 }
 
 /****************************************************************************
@@ -119,6 +136,49 @@ void host_sleepuntil(uint64_t nsec)
 
 int host_settimer(uint64_t nsec)
 {
+#ifdef __APPLE__
+  /* macOS path: emulate absolute timer using setitimer() relative delays.
+   *
+   * The caller passes time relative to g_start (same semantic as TIMER_ABSTIME
+   * path). Convert to absolute MONOTONIC ns, compute delta, then arm a one-shot
+   * ITIMER_REAL to deliver SIGALRM.
+   */
+  struct timespec tp;
+  uint64_t now_abs;
+  uint64_t target_abs;
+  uint64_t delta_ns;
+  struct itimerval itv;
+
+  if (!g_timer_inited)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+
+  target_abs = nsec + g_start;
+
+  clock_gettime(CLOCK_MONOTONIC, &tp);
+  now_abs = 1000000000ull * tp.tv_sec + tp.tv_nsec;
+
+  if (target_abs <= now_abs)
+    {
+      delta_ns = 1000; /* 1 us minimum */
+    }
+  else
+    {
+      delta_ns = target_abs - now_abs;
+      if (delta_ns < 1000)
+        {
+          delta_ns = 1000;
+        }
+    }
+
+  memset(&itv, 0, sizeof(itv));
+  itv.it_value.tv_sec  = (time_t)(delta_ns / 1000000000ull);
+  itv.it_value.tv_usec = (suseconds_t)((delta_ns % 1000000000ull) / 1000ull);
+
+  return setitimer(ITIMER_REAL, &itv, NULL);
+#else
   struct itimerspec tspec =
     {
       0
@@ -132,6 +192,7 @@ int host_settimer(uint64_t nsec)
   tspec.it_value.tv_nsec = nsec % 1000000000;
 
   return timer_settime(g_timer, TIMER_ABSTIME, &tspec, NULL);
+#endif
 }
 
 /****************************************************************************
