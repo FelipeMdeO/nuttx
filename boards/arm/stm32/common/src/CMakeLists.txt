@@ -158,4 +158,8 @@ if(CONFIG_INPUT_SBUTTON)
   list(APPEND SRCS stm32_sbutton.c)
 endif()
 
+if(CONFIG_INPUT_KMATRIX)
+  list(APPEND SRCS stm32_kmatrix.c)
+endif()
+
 target_sources(board PRIVATE ${SRCS})

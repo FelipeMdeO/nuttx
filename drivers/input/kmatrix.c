@@ -181,7 +181,7 @@ static void kmatrix_scan_worker(FAR void *arg)
   uint8_t row, col;
   bool pressed;
   bool old_state;
-  uint16_t keycode;
+  uint32_t keycode;
   int ret;
 
   ret = nxmutex_lock(&priv->lock);
@@ -222,11 +222,11 @@ static void kmatrix_scan_worker(FAR void *arg)
                   /* Generate keyboard event */
 
                   keycode = priv->config->keymap[row * priv->config->ncols + col];
-                  keyboard_event(&priv->lower, keycode,
+                  keyboard_event(&priv->lower, (uint16_t)keycode,
                                  pressed ? KEYBOARD_PRESS : KEYBOARD_RELEASE);
 
                   iinfo("Key [%d,%d]: %s (code %lu)\n", row, col,
-                        pressed ? "PRESS" : "RELEASE", keycode);
+                        pressed ? "PRESS" : "RELEASE", (unsigned long)keycode);
                 }
             }
           else

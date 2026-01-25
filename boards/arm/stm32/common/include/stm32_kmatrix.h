@@ -1,5 +1,5 @@
 /****************************************************************************
- * include/nuttx/input/kmatrix.h
+ * boards/arm/stm32/common/include/stm32_kmatrix.h
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,66 +20,56 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_INPUT_KMATRIX_H
-#define __INCLUDE_NUTTX_INPUT_KMATRIX_H
+#ifndef __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_H
+#define __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-#include <nuttx/input/keyboard.h>
-#include <stdint.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
+ * Type Definitions
+ ****************************************************************************/
+
+/****************************************************************************
  * Public Types
  ****************************************************************************/
 
-typedef uint32_t kmatrix_pin_t;
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
 
-/* Keyboard matrix configuration structure passed to kmatrix_register() */
-
-struct kmatrix_config_s
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
 {
-  uint8_t nrows;                          /* Number of rows */
-  uint8_t ncols;                          /* Number of columns */
-  FAR const kmatrix_pin_t *rows;          /* Array of row GPIO pins */
-  FAR const kmatrix_pin_t *cols;          /* Array of column GPIO pins */
-  FAR const uint32_t *keymap;             /* Keymap: keycode[row * cols + col] */
-  uint16_t poll_interval_ms;              /* Polling interval in milliseconds */
+#else
+#define EXTERN extern
+#endif
 
-  /* GPIO callback functions specific to the SoC/board */
-
-  void (*config_row)(kmatrix_pin_t pin);
-  void (*config_col)(kmatrix_pin_t pin);
-  void (*row_set)(kmatrix_pin_t pin, bool active);
-  bool (*col_get)(kmatrix_pin_t pin);
-};
+/****************************************************************************
+ * Inline Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 /****************************************************************************
- * Name: kmatrix_register
+ * Name: board_kmatrix_initialize
  *
  * Description:
- *   Configure and register a keyboard matrix device.  This will create the
- *   /dev/kbdN device node and enable keyboard scanning.
+ *   This function is called by application-specific setup logic to
+ *   configure the keyboard matrix device.
  *
  * Input Parameters:
- *   config - The keyboard matrix configuration.  This structure is not copied;
- *            it must persist for the lifetime of the driver.
- *   devpath - The device path for the /dev/kbdN device.
+ *   devpath - The device path, typically "/dev/kbd0"
  *
  * Returned Value:
  *   Zero is returned on success.  Otherwise, a negated errno value is
@@ -87,11 +77,11 @@ extern "C"
  *
  ****************************************************************************/
 
-int kmatrix_register(FAR const struct kmatrix_config_s *config,
-                     FAR const char *devpath);
+int board_kmatrix_initialize(const char *devpath);
 
+#undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __INCLUDE_NUTTX_INPUT_KMATRIX_H */
+#endif /* __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_H */
