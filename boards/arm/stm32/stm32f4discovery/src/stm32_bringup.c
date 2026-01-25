@@ -102,6 +102,10 @@
 #include "board_sbutton.h"
 #endif
 
+#ifdef CONFIG_INPUT_KMATRIX
+#include "stm32_kmatrix.h"
+#endif
+
 #ifdef CONFIG_SENSORS_ZEROCROSS
 #include "stm32_zerocross.h"
 #endif
@@ -411,6 +415,16 @@ int stm32_bringup(void)
   if (ret != OK)
     {
       syslog(LOG_ERR, "Failed to register djoystick driver: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_INPUT_KMATRIX
+  /* Initialize and register the keyboard matrix driver */
+
+  ret = board_kmatrix_initialize("/dev/kbd0");
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: board_kmatrix_initialize() failed: %d\n", ret);
     }
 #endif
 

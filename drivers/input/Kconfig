@@ -749,4 +749,38 @@ config SPQ10KBD_NPOLLWAITERS
 
 endif # INPUT_SPQ10KBD
 
+config INPUT_KMATRIX
+	bool "Keyboard Matrix Driver"
+	default n
+	select INPUT_KEYBOARD
+	---help---
+		Enable support for keyboard matrix input devices with polling-based
+		scanning. This driver supports NxM key matrices with debounce and
+		anti-ghosting using diodes.
+
+if INPUT_KMATRIX
+
+config INPUT_KMATRIX_BUFSIZE
+	int "Keyboard matrix buffer size"
+	default 64
+	---help---
+		Size of the keyboard event buffer for each open file descriptor.
+
+config INPUT_KMATRIX_POLL_MS
+	int "Polling interval (milliseconds)"
+	default 10
+	---help---
+		Time interval in milliseconds between matrix scans. Smaller values
+		provide lower latency but consume more CPU. Default: 10ms.
+
+config INPUT_KMATRIX_DEBOUNCE
+	int "Debounce threshold (scan cycles)"
+	default 3
+	---help---
+		Number of consecutive scan cycles a key must maintain the same state
+		before generating a press/release event. Higher values provide more
+		robust debounce but increase latency. Default: 3 cycles.
+
+endif # INPUT_KMATRIX
+
 endif # INPUT
