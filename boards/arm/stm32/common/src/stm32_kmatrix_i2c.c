@@ -31,6 +31,21 @@
 #include <debug.h>
 
 #include <nuttx/input/kmatrix.h>
+#include <nuttx/i2c/i2c_master.h>
+#include <nuttx/ioexpander/ioexpander.h>
+
+#include <arch/board/board.h>
+
+#include "stm32.h"
+#include "stm32_i2c.h"
+
+#ifdef CONFIG_IOEXPANDER_MCP23X08
+#  include <nuttx/ioexpander/mcp23x08.h>
+#endif
+
+#ifdef CONFIG_IOEXPANDER_PCA9538
+#  include <nuttx/ioexpander/pca9538.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -42,64 +57,13 @@ typedef uint32_t kmatrix_pin_t;
  * Private Data
  ****************************************************************************/
 
-/* Callbacks will be filled in from the I2C driver */
-
-static void (*km_config_row_cb)(kmatrix_pin_t pin) = NULL;
-static void (*km_config_col_cb)(kmatrix_pin_t pin) = NULL;
-static void (*km_row_set_cb)(kmatrix_pin_t pin, bool active) = NULL;
-static bool (*km_col_get_cb)(kmatrix_pin_t pin) = NULL;
-
-/* Wrapper functions */
-
-static void km_i2c_config_row(kmatrix_pin_t pin)
-{
-  if (km_config_row_cb != NULL)
-    {
-      km_config_row_cb(pin);
-    }
-}
-
-static void km_i2c_config_col(kmatrix_pin_t pin)
-{
-  if (km_config_col_cb != NULL)
-    {
-      km_config_col_cb(pin);
-    }
-}
-
-static void km_i2c_row_set(kmatrix_pin_t pin, bool active)
-{
-  if (km_row_set_cb != NULL)
-    {
-      km_row_set_cb(pin, active);
-    }
-}
-
-static bool km_i2c_col_get(kmatrix_pin_t pin)
-{
-  if (km_col_get_cb != NULL)
-    {
-      return km_col_get_cb(pin);
-    }
-  return false;
-}
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
 /* Row and column pin definitions for 4x3 keypad matrix via I2C expander
  *
- * For PCF8574/MCP23017 I2C expanders, pins are numbered 0-7 (PCF8574)
- * or 0-15 (MCP23017) in the expander's address space.
+ * For MCP23X08/PCA9538 I2C expanders, pins are numbered 0-7.
  *
- * Example mapping for PCF8574:
+ * Example mapping:
  *   Rows (outputs):    Pins 0-3
  *   Columns (inputs):  Pins 4-6 (with pull-ups)
- *
- * Example mapping for MCP23017:
- *   Rows (outputs):    Port A Pins 0-3
- *   Columns (inputs):  Port B Pins 0-2 (with pull-ups)
  */
 
 static const kmatrix_pin_t g_km_rows[] =
@@ -124,6 +88,10 @@ static const uint32_t g_km_keymap[] =
   '*', '0', '#',  /* Row 3 */
 };
 
+/* Get callbacks from I2C driver */
+
+extern FAR struct kmatrix_callbacks_s *kmatrix_i2c_get_callbacks(void);
+
 /* Keyboard matrix configuration structure */
 
 static struct kmatrix_config_s g_km_i2c_config =
@@ -134,11 +102,26 @@ static struct kmatrix_config_s g_km_i2c_config =
   .cols               = g_km_cols,
   .keymap             = g_km_keymap,
   .poll_interval_ms   = CONFIG_INPUT_KMATRIX_POLL_MS,
-  .config_row         = km_i2c_config_row,
-  .config_col         = km_i2c_config_col,
-  .row_set            = km_i2c_row_set,
-  .col_get            = km_i2c_col_get,
+  /* Callbacks will be set in board_kmatrix_i2c_initialize */
 };
+
+/* IO expander configuration */
+
+#ifdef CONFIG_IOEXPANDER_MCP23X08
+static struct mcp23x08_config_s g_mcp23x08_config =
+{
+  .address   = CONFIG_STM32_KMATRIX_I2C_ADDR,
+  .frequency = CONFIG_STM32_KMATRIX_I2C_FREQ,
+};
+#endif
+
+#ifdef CONFIG_IOEXPANDER_PCA9538
+static struct pca9538_config_s g_pca9538_config =
+{
+  .address   = CONFIG_STM32_KMATRIX_I2C_ADDR,
+  .frequency = CONFIG_STM32_KMATRIX_I2C_FREQ,
+};
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -158,24 +141,64 @@ static struct kmatrix_config_s g_km_i2c_config =
  *   Zero on success; negated errno on failure.
  */
 
-extern int kmatrix_i2c_register(FAR const struct kmatrix_config_s *config,
-                                FAR const char *devpath,
-                                int i2c_bus, uint8_t i2c_addr);
-
 int board_kmatrix_i2c_initialize(const char *devpath)
 {
-  /* NOTE: Callbacks are set directly in g_km_i2c_config structure above.
-   * The actual I2C communication is handled by the kmatrix_i2c driver,
-   * which stores the I2C device handle in a global variable accessible
-   * to the callback functions through the wrapper layer.
-   */
+  FAR struct i2c_master_s *i2c;
+  FAR struct ioexpander_dev_s *ioe;
+  FAR struct kmatrix_callbacks_s *callbacks;
+  int ret;
 
   iinfo("Initializing keyboard matrix via I2C expander\n");
 
-  /* Call the generic I2C driver with board-specific configuration */
+  /* Initialize I2C bus */
 
-  return kmatrix_i2c_register(&g_km_i2c_config,
-                              devpath,
-                              CONFIG_STM32_KMATRIX_I2C_BUS,
-                              CONFIG_STM32_KMATRIX_I2C_ADDR);
+  i2c = stm32_i2cbus_initialize(CONFIG_STM32_KMATRIX_I2C_BUS);
+  if (i2c == NULL)
+    {
+      ierr("ERROR: Failed to initialize I2C bus %d\n",
+           CONFIG_STM32_KMATRIX_I2C_BUS);
+      return -ENODEV;
+    }
+
+  /* Initialize IO expander */
+
+#ifdef CONFIG_IOEXPANDER_MCP23X08
+  ioe = mcp23x08_initialize(i2c, &g_mcp23x08_config);
+  if (ioe == NULL)
+    {
+      ierr("ERROR: Failed to initialize MCP23X08\n");
+      return -ENODEV;
+    }
+  iinfo("MCP23X08 initialized at 0x%02x\n", CONFIG_STM32_KMATRIX_I2C_ADDR);
+#elif defined(CONFIG_IOEXPANDER_PCA9538)
+  ioe = pca9538_initialize(i2c, &g_pca9538_config);
+  if (ioe == NULL)
+    {
+      ierr("ERROR: Failed to initialize PCA9538\n");
+      return -ENODEV;
+    }
+  iinfo("PCA9538 initialized at 0x%02x\n", CONFIG_STM32_KMATRIX_I2C_ADDR);
+#else
+#  error "No IO expander configured"
+#endif
+
+  /* Get callbacks from I2C driver */
+
+  callbacks = kmatrix_i2c_get_callbacks();
+  g_km_i2c_config.config_row = callbacks->config_row;
+  g_km_i2c_config.config_col = callbacks->config_col;
+  g_km_i2c_config.row_set = callbacks->row_set;
+  g_km_i2c_config.col_get = callbacks->col_get;
+
+  /* Register keyboard matrix driver */
+
+  ret = kmatrix_i2c_register(ioe, &g_km_i2c_config, devpath);
+  if (ret < 0)
+    {
+      ierr("ERROR: Failed to register keyboard matrix: %d\n", ret);
+      return ret;
+    }
+
+  iinfo("Keyboard matrix I2C driver registered at %s\n", devpath);
+  return OK;
 }

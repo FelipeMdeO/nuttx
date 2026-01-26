@@ -60,6 +60,20 @@ struct kmatrix_config_s
   bool (*col_get)(kmatrix_pin_t pin);
 };
 
+#ifdef CONFIG_INPUT_KMATRIX_I2C
+
+/* Keyboard matrix callback structure for I2C expanders */
+
+struct kmatrix_callbacks_s
+{
+  void (*config_row)(kmatrix_pin_t pin);
+  void (*config_col)(kmatrix_pin_t pin);
+  void (*row_set)(kmatrix_pin_t pin, bool active);
+  bool (*col_get)(kmatrix_pin_t pin);
+};
+
+#endif /* CONFIG_INPUT_KMATRIX_I2C */
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -89,6 +103,51 @@ extern "C"
 
 int kmatrix_register(FAR const struct kmatrix_config_s *config,
                      FAR const char *devpath);
+
+#ifdef CONFIG_INPUT_KMATRIX_I2C
+
+/* Forward declaration */
+
+struct ioexpander_dev_s;
+
+/****************************************************************************
+ * Name: kmatrix_i2c_register
+ *
+ * Description:
+ *   Register keyboard matrix driver using I2C GPIO expander.
+ *   The IO expander device must already be initialized using
+ *   mcp23x08_initialize() or pca9538_initialize().
+ *
+ * Input Parameters:
+ *   ioe_dev  - IO expander device (from mcp23x08_initialize or pca9538_initialize)
+ *   config   - The keyboard matrix configuration (with callbacks set)
+ *   devpath  - The device path for the /dev/kbdN device
+ *
+ * Returned Value:
+ *   Zero is returned on success.  Otherwise, a negated errno value is
+ *   returned to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+
+int kmatrix_i2c_register(FAR struct ioexpander_dev_s *ioe_dev,
+                         FAR const struct kmatrix_config_s *config,
+                         FAR const char *devpath);
+
+/****************************************************************************
+ * Name: kmatrix_i2c_get_callbacks
+ *
+ * Description:
+ *   Get the I2C callback functions to use in keyboard matrix config.
+ *   This is called by board adapters to populate the callbacks.
+ *
+ * Returned Value:
+ *   Structure with the callback function pointers.
+ *
+ ****************************************************************************/
+
+FAR struct kmatrix_callbacks_s *kmatrix_i2c_get_callbacks(void);
+
+#endif /* CONFIG_INPUT_KMATRIX_I2C */
 
 #ifdef __cplusplus
 }
