@@ -781,6 +781,32 @@ config INPUT_KMATRIX_DEBOUNCE
 		before generating a press/release event. Higher values provide more
 		robust debounce but increase latency. Default: 3 cycles.
 
+config INPUT_KMATRIX_I2C
+	bool "Keyboard Matrix via I2C GPIO Expander"
+	depends on INPUT_KMATRIX && I2C
+	default n
+	---help---
+		Enable keyboard matrix driver using I2C GPIO expander (PCF8574 or MCP23017).
+		Requires I2C support to be enabled.
+
+if INPUT_KMATRIX_I2C
+
+config INPUT_KMATRIX_I2C_PCF8574
+	bool "Use PCF8574 I2C Expander"
+	default n
+	---help---
+		Use PCF8574 I2C GPIO expander (8-bit, quasi-bidirectional I/O).
+		This is a simple, low-cost 8-bit I/O expander commonly used in hobbyist projects.
+
+config INPUT_KMATRIX_I2C_MCP23017
+	bool "Use MCP23017 I2C Expander"
+	default n
+	---help---
+		Use MCP23017 I2C GPIO expander (16-bit, configurable I/O directions).
+		This offers more features and flexibility than PCF8574.
+
+endif # INPUT_KMATRIX_I2C
+
 endif # INPUT_KMATRIX
 
 endif # INPUT

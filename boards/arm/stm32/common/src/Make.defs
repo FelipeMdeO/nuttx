@@ -167,7 +167,11 @@ ifeq ($(CONFIG_INPUT_SBUTTON),y)
 endif
 
 ifeq ($(CONFIG_INPUT_KMATRIX),y)
-  CSRCS += stm32_kmatrix.c
+  CSRCS += stm32_kmatrix_gpio.c
+endif
+
+ifeq ($(CONFIG_INPUT_KMATRIX_I2C),y)
+  CSRCS += stm32_kmatrix_i2c.c
 endif
 
 DEPPATH += --dep-path src

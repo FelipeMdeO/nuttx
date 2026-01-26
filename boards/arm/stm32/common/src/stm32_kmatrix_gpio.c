@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32/common/src/stm32_kmatrix.c
+ * boards/arm/stm32/common/src/stm32_kmatrix_gpio.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -47,7 +47,7 @@
 
 typedef uint32_t kmatrix_pin_t;
 
-struct stm32_kmatrixconfig_s
+struct stm32_kmatrix_gpio_config_s
 {
   /* Configuration structure as seen by the kmatrix driver */
 
@@ -111,7 +111,7 @@ static const uint32_t g_km_keymap[] =
  * by the driver and is presumed to persist while the driver is active.
  */
 
-static struct stm32_kmatrixconfig_s g_km_config =
+static struct stm32_kmatrix_gpio_config_s g_km_config =
 {
   .config =
   {

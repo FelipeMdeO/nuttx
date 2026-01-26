@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32/common/include/stm32_kmatrix.h
+ * boards/arm/stm32/common/include/stm32_kmatrix_gpio.h
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,8 +20,8 @@
  *
  ****************************************************************************/
 
-#ifndef __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_H
-#define __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_H
+#ifndef __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_GPIO_H
+#define __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_GPIO_H
 
 /****************************************************************************
  * Included Files
@@ -84,4 +84,4 @@ int board_kmatrix_initialize(const char *devpath);
 }
 #endif
 
-#endif /* __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_H */
+#endif /* __BOARDS_ARM_STM32_COMMON_INCLUDE_STM32_KMATRIX_GPIO_H */
