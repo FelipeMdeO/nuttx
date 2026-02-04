@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/sim/src/sim/win/sim_hosttime.c
+ * arch/sim/src/sim/posix/sim_hosttime.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
