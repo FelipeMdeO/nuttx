@@ -31,20 +31,8 @@
 #include <debug.h>
 #include <errno.h>
 
-#include <nuttx/i2c/i2c_master.h>
 #include <nuttx/input/kmatrix.h>
-#include <nuttx/kmalloc.h>
 #include <nuttx/ioexpander/ioexpander.h>
-
-#include <arch/board/board.h>
-
-/* Forward declaration */
-struct i2c_master_s;
-#if defined(CONFIG_STM32_I2C)
-struct i2c_master_s *stm32_i2cbus_initialize(int port);
-#else
-#  error "I2C initialization not defined for this architecture"
-#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -127,8 +115,18 @@ static void km_i2c_config_col(kmatrix_pin_t pin)
                            IOEXPANDER_DIRECTION_IN_PULLUP);
   if (ret < 0)
     {
-      ierr("ERROR: Failed to configure col pin %lu: %d\n",
-           (unsigned long)pin, ret);
+      /* PCA9538 does not support IN_PULLUP; fall back to plain input. */
+
+      iinfo("I2C: IN_PULLUP not supported for pin %lu, falling back to IN\n",
+            (unsigned long)pin);
+
+      ret = IOEXP_SETDIRECTION(g_km_i2c_dev.ioe, (uint8_t)pin,
+                               IOEXPANDER_DIRECTION_IN);
+      if (ret < 0)
+        {
+          ierr("ERROR: Failed to configure col pin %lu: %d\n",
+               (unsigned long)pin, ret);
+        }
     }
 }
 

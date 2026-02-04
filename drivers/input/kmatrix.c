@@ -137,15 +137,13 @@ static void kmatrix_set_state(FAR struct kmatrix_dev_s *priv,
  ****************************************************************************/
 
 static void kmatrix_inc_debounce(FAR struct kmatrix_dev_s *priv,
-                                  uint8_t row, uint8_t col)
+                                 uint8_t row, uint8_t col)
 {
   uint16_t idx = row * priv->config->ncols + col;
-  uint16_t byte_idx = idx / 8;
-  uint8_t bit_idx = idx % 8;
 
-  if (priv->debounce[byte_idx] < (1 << bit_idx))
+  if (priv->debounce[idx] < CONFIG_INPUT_KMATRIX_DEBOUNCE)
     {
-      priv->debounce[byte_idx]++;
+      priv->debounce[idx]++;
     }
 }
 
@@ -158,12 +156,11 @@ static void kmatrix_inc_debounce(FAR struct kmatrix_dev_s *priv,
  ****************************************************************************/
 
 static void kmatrix_reset_debounce(FAR struct kmatrix_dev_s *priv,
-                                    uint8_t row, uint8_t col)
+                                   uint8_t row, uint8_t col)
 {
   uint16_t idx = row * priv->config->ncols + col;
-  uint16_t byte_idx = idx / 8;
 
-  priv->debounce[byte_idx] = 0;
+  priv->debounce[idx] = 0;
 }
 
 /****************************************************************************
@@ -213,7 +210,7 @@ static void kmatrix_scan_worker(FAR void *arg)
 
               /* After debounce threshold is reached, update state */
 
-              if (priv->debounce[row * priv->config->ncols / 8] >=
+              if (priv->debounce[row * priv->config->ncols + col] >=
                   CONFIG_INPUT_KMATRIX_DEBOUNCE)
                 {
                   kmatrix_set_state(priv, row, col, pressed);
@@ -266,6 +263,8 @@ int kmatrix_register(FAR const struct kmatrix_config_s *config,
   FAR struct kmatrix_dev_s *priv;
   int ret;
   uint16_t state_size;
+  uint16_t debounce_size;
+  uint16_t keys;
 
   iinfo("Registering keypad matrix: %dx%d at %s\n", config->nrows,
         config->ncols, devpath);
@@ -293,7 +292,9 @@ int kmatrix_register(FAR const struct kmatrix_config_s *config,
 
   /* Calculate bitmap sizes */
 
-  state_size = (config->nrows * config->ncols + 7) / 8;
+  keys = config->nrows * config->ncols;
+  state_size = (keys + 7) / 8;
+  debounce_size = keys;
 
   /* Allocate state and debounce bitmaps */
 
@@ -305,7 +306,7 @@ int kmatrix_register(FAR const struct kmatrix_config_s *config,
       return -ENOMEM;
     }
 
-  priv->debounce = kmm_zalloc(state_size);
+  priv->debounce = kmm_zalloc(debounce_size);
   if (!priv->debounce)
     {
       ierr("ERROR: Failed to allocate debounce bitmap\n");

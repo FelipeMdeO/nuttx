@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <debug.h>
+#include <unistd.h>
 
 #include <nuttx/board.h>
 #include <arch/board/board.h>
@@ -190,10 +191,10 @@ static void km_stm32_row_set(kmatrix_pin_t pin, bool active)
 
 static bool km_stm32_col_get(kmatrix_pin_t pin)
 {
-  /* With pull-up resistors and diodes:
-   * Key pressed   -> column goes low (0)
+  /* With pull-up resistors:
+   * Key pressed   -> column goes low (0) when row is driven low
    * Key released  -> column stays high (1)
-   * Return inverted logic: true when pressed (low), false when released (high)
+   * Return true when pressed (low), false when released (high)
    */
 
   return !stm32_gpioread(pin);
@@ -226,4 +227,122 @@ int board_kmatrix_initialize(const char *devpath)
   /* Register the keyboard matrix with the generic driver */
 
   return kmatrix_register(&g_km_config.config, devpath);
+}
+
+int board_kmatrix_diag(int loops, int delay_ms)
+{
+  int iter = 0;
+  uint8_t last_bits[4] = {0xff, 0xff, 0xff, 0xff};
+  const useconds_t pulse_us = 200000;
+
+  iinfo("KMATRIX diag: pin identify pulses (disconnect keypad)\n");
+  for (unsigned int r = 0; r < g_km_config.config.nrows; r++)
+    {
+      iinfo("Pulse ROW%u\n", r + 1);
+      stm32_configgpio(g_km_rows[r]);
+      stm32_gpiowrite(g_km_rows[r], true);
+      usleep(pulse_us);
+      stm32_gpiowrite(g_km_rows[r], false);
+      usleep(pulse_us);
+      stm32_gpiowrite(g_km_rows[r], true);
+      usleep(pulse_us);
+    }
+
+  iinfo("KMATRIX diag: column pulses require BOARD_KMATRIX_COLx_OUT\n");
+#ifdef BOARD_KMATRIX_COL0_OUT
+  iinfo("Pulse COL1 (output mode)\n");
+  stm32_configgpio(BOARD_KMATRIX_COL0_OUT);
+  stm32_gpiowrite(BOARD_KMATRIX_COL0_OUT, true);
+  usleep(pulse_us);
+  stm32_gpiowrite(BOARD_KMATRIX_COL0_OUT, false);
+  usleep(pulse_us);
+  stm32_gpiowrite(BOARD_KMATRIX_COL0_OUT, true);
+  usleep(pulse_us);
+#endif
+
+#ifdef BOARD_KMATRIX_COL1_OUT
+  iinfo("Pulse COL2 (output mode)\n");
+  stm32_configgpio(BOARD_KMATRIX_COL1_OUT);
+  stm32_gpiowrite(BOARD_KMATRIX_COL1_OUT, true);
+  usleep(pulse_us);
+  stm32_gpiowrite(BOARD_KMATRIX_COL1_OUT, false);
+  usleep(pulse_us);
+  stm32_gpiowrite(BOARD_KMATRIX_COL1_OUT, true);
+  usleep(pulse_us);
+#endif
+
+#ifdef BOARD_KMATRIX_COL2_OUT
+  iinfo("Pulse COL3 (output mode)\n");
+  stm32_configgpio(BOARD_KMATRIX_COL2_OUT);
+  stm32_gpiowrite(BOARD_KMATRIX_COL2_OUT, true);
+  usleep(pulse_us);
+  stm32_gpiowrite(BOARD_KMATRIX_COL2_OUT, false);
+  usleep(pulse_us);
+  stm32_gpiowrite(BOARD_KMATRIX_COL2_OUT, true);
+  usleep(pulse_us);
+#endif
+
+  for (unsigned int r = 0; r < g_km_config.config.nrows; r++)
+    {
+      km_stm32_config_row(g_km_rows[r]);
+      stm32_gpiowrite(g_km_rows[r], true);
+    }
+
+  for (unsigned int c = 0; c < g_km_config.config.ncols; c++)
+    {
+      km_stm32_config_col(g_km_cols[c]);
+    }
+
+  iinfo("KMATRIX diag: loops=%d delay_ms=%d\n", loops, delay_ms);
+
+  while (loops <= 0 || iter < loops)
+    {
+      for (unsigned int r = 0; r < g_km_config.config.nrows; r++)
+        {
+          for (unsigned int rr = 0; rr < g_km_config.config.nrows; rr++)
+            {
+              stm32_gpiowrite(g_km_rows[rr], true);
+            }
+
+          stm32_gpiowrite(g_km_rows[r], false);
+          usleep(1000);
+
+          if (g_km_config.config.ncols == 3)
+            {
+              bool b0 = stm32_gpioread(g_km_cols[0]);
+              bool b1 = stm32_gpioread(g_km_cols[1]);
+              bool b2 = stm32_gpioread(g_km_cols[2]);
+              uint8_t bits = (b0 ? 1 : 0) | (b1 ? 2 : 0) | (b2 ? 4 : 0);
+
+              if (bits != last_bits[r])
+                {
+                  iinfo("ROW=%u COLS(raw)=%d%d%d\n",
+                         r + 1, b0 ? 1 : 0, b1 ? 1 : 0, b2 ? 1 : 0);
+                  last_bits[r] = bits;
+                }
+            }
+
+          for (unsigned int c = 0; c < g_km_config.config.ncols; c++)
+            {
+              bool pressed = !stm32_gpioread(g_km_cols[c]);
+              if (pressed)
+                {
+                  iinfo("ROW=%u COL=%u\n", r + 1, c + 1);
+                  while (!stm32_gpioread(g_km_cols[c]))
+                    {
+                      usleep(1000);
+                    }
+                }
+            }
+        }
+
+      if (delay_ms > 0)
+        {
+          usleep(delay_ms * 1000);
+        }
+
+      iter++;
+    }
+
+  return OK;
 }

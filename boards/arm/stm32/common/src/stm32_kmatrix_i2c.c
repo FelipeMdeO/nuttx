@@ -167,6 +167,7 @@ int board_kmatrix_i2c_initialize(const char *devpath)
   if (ioe == NULL)
     {
       ierr("ERROR: Failed to initialize MCP23X08\n");
+      stm32_i2cbus_uninitialize(i2c);
       return -ENODEV;
     }
   iinfo("MCP23X08 initialized at 0x%02x\n", CONFIG_STM32_KMATRIX_I2C_ADDR);
@@ -175,6 +176,7 @@ int board_kmatrix_i2c_initialize(const char *devpath)
   if (ioe == NULL)
     {
       ierr("ERROR: Failed to initialize PCA9538\n");
+      stm32_i2cbus_uninitialize(i2c);
       return -ENODEV;
     }
   iinfo("PCA9538 initialized at 0x%02x\n", CONFIG_STM32_KMATRIX_I2C_ADDR);
@@ -196,6 +198,7 @@ int board_kmatrix_i2c_initialize(const char *devpath)
   if (ret < 0)
     {
       ierr("ERROR: Failed to register keyboard matrix: %d\n", ret);
+      stm32_i2cbus_uninitialize(i2c);
       return ret;
     }
 
