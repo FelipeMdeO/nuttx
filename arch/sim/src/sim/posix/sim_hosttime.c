@@ -1,5 +1,7 @@
 /****************************************************************************
- * arch/sim/src/sim/posix/sim_hosttime.c
+ * arch/sim/src/sim/win/sim_hosttime.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,7 +23,6 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#define _POSIX_C_SOURCE 200809L
 
 #include <errno.h>
 #include <signal.h>
@@ -34,22 +35,12 @@
 #include "sim_internal.h"
 
 /****************************************************************************
- * Platform detection
- ****************************************************************************/
-
-#if defined(__APPLE__) && defined(__MACH__)
-#  define NUTTX_DARWIN
-#endif
-
-/****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static uint64_t g_start;
+/* Start time of the simulation in nanoseconds (monotonic clock) */
 
-#ifndef NUTTX_DARWIN
-static timer_t g_timer;
-#endif
+static uint64_t g_start;
 
 /****************************************************************************
  * Public Functions
@@ -66,17 +57,7 @@ int host_inittimer(void)
   clock_gettime(CLOCK_MONOTONIC, &tp);
   g_start = 1000000000ull * tp.tv_sec + tp.tv_nsec;
 
-#ifdef NUTTX_DARWIN
-  /* macOS: setitimer requires no explicit timer creation */
   return 0;
-#else
-  struct sigevent sigev;
-  sigev.sigev_notify = SIGEV_SIGNAL;
-  sigev.sigev_signo  = SIGALRM;
-  sigev.sigev_value.sival_ptr = NULL;
-
-  return timer_create(CLOCK_MONOTONIC, &sigev, &g_timer);
-#endif
 }
 
 /****************************************************************************
@@ -109,8 +90,9 @@ void host_sleep(uint64_t nsec)
 
 void host_sleepuntil(uint64_t nsec)
 {
-  uint64_t now = host_gettime(false);
+  uint64_t now;
 
+  now = host_gettime(false);
   if (nsec > now + 1000)
     {
       usleep((nsec - now) / 1000);
@@ -119,50 +101,28 @@ void host_sleepuntil(uint64_t nsec)
 
 /****************************************************************************
  * Name: host_settimer
- *
- * Description:
- *   Set up a timer to send periodic signals.
- *
- * Input Parameters:
- *   nsec - timer expire time
- *
- * Returned Value:
- *   On success, (0) zero value is returned, otherwise a negative value.
- *
  ****************************************************************************/
 
 int host_settimer(uint64_t nsec)
 {
-#ifdef NUTTX_DARWIN
-  /* macOS implementation using setitimer() */
-
   struct itimerval it;
-  uint64_t usec = nsec / 1000;
+  uint64_t now;
+  uint64_t usec;
+
+  now = host_gettime(false);
+
+  usec = (nsec <= now) ? 1 : (nsec - now) / 1000;
+  usec = (usec == 0) ? 1 : usec;
 
   it.it_value.tv_sec  = usec / 1000000;
   it.it_value.tv_usec = usec % 1000000;
 
   /* One-shot timer */
+
   it.it_interval.tv_sec  = 0;
   it.it_interval.tv_usec = 0;
 
   return setitimer(ITIMER_REAL, &it, NULL);
-
-#else
-
-  struct itimerspec tspec;
-  uint64_t abs;
-
-  abs = nsec + g_start;
-
-  tspec.it_value.tv_sec  = abs / 1000000000;
-  tspec.it_value.tv_nsec = abs % 1000000000;
-
-  tspec.it_interval.tv_sec  = 0;
-  tspec.it_interval.tv_nsec = 0;
-
-  return timer_settime(g_timer, TIMER_ABSTIME, &tspec, NULL);
-#endif
 }
 
 /****************************************************************************
