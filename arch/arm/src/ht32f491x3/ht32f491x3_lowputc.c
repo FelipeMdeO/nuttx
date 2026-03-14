@@ -28,7 +28,10 @@
 
 #include <nuttx/compiler.h>
 
+#include <stdbool.h>
 #include <stdint.h>
+
+#include <arch/board/board.h>
 
 #include "arm_internal.h"
 #include "chip.h"
@@ -38,6 +41,7 @@
 #include "ht32f491x3_serial.h"
 
 #include "hardware/ht32f491x3_crm.h"
+#include "hardware/ht32f491x3_gpio.h"
 #include "hardware/ht32f491x3_uart.h"
 
 /****************************************************************************
@@ -102,6 +106,30 @@
  * Private Functions
  ****************************************************************************/
 
+static void ht32f491x3_configgpio(uintptr_t base, unsigned int pin,
+                                  bool pullup, unsigned int af)
+{
+  modifyreg32(base + HT32_GPIO_CFGR_OFFSET,
+              HT32_GPIO_MODE_MASK(pin),
+              HT32_GPIO_MODE_VALUE(pin, 2u));
+
+  modifyreg32(base + HT32_GPIO_OMODE_OFFSET,
+              HT32_GPIO_PIN(pin),
+              0u << pin);
+
+  modifyreg32(base + HT32_GPIO_ODRVR_OFFSET,
+              HT32_GPIO_ODRVR_MASK(pin),
+              HT32_GPIO_ODRVR_VALUE(pin, 1u));
+
+  modifyreg32(base + HT32_GPIO_PULL_OFFSET,
+              HT32_GPIO_PULL_MASK(pin),
+              HT32_GPIO_PULL_VALUE(pin, pullup ? 1u : 0u));
+
+  modifyreg32(base + HT32_GPIO_MUX_OFFSET(pin),
+              HT32_GPIO_MUX_MASK(pin),
+              HT32_GPIO_MUX_VALUE(pin, af));
+}
+
 static uint32_t ht32f491x3_bauddiv(uint32_t clock, uint32_t baud)
 {
   uint32_t div;
@@ -114,9 +142,52 @@ static uint32_t ht32f491x3_bauddiv(uint32_t clock, uint32_t baud)
  * Public Functions
  ****************************************************************************/
 
-void weak_function ht32f491x3_usart_pins(uintptr_t uartbase)
+/* Configure the board-specific pinmux for the selected USART. The physical
+ * mapping comes from BOARD_USARTx_* macros in <arch/board/board.h>.
+ */
+
+void ht32f491x3_usart_pins(uintptr_t uartbase)
 {
-  UNUSED(uartbase);
+#ifdef BOARD_USART1_GPIO_CLKEN
+  if (uartbase == HT32_USART1_BASE)
+    {
+      modifyreg32(HT32_CRM_AHBEN1, 0, BOARD_USART1_GPIO_CLKEN);
+      ht32f491x3_configgpio(BOARD_USART1_TX_GPIO_BASE,
+                            BOARD_USART1_TX_PIN, false,
+                            BOARD_USART1_TX_AF);
+      ht32f491x3_configgpio(BOARD_USART1_RX_GPIO_BASE,
+                            BOARD_USART1_RX_PIN, true,
+                            BOARD_USART1_RX_AF);
+      return;
+    }
+#endif
+
+#ifdef BOARD_USART2_GPIO_CLKEN
+  if (uartbase == HT32_USART2_BASE)
+    {
+      modifyreg32(HT32_CRM_AHBEN1, 0, BOARD_USART2_GPIO_CLKEN);
+      ht32f491x3_configgpio(BOARD_USART2_TX_GPIO_BASE,
+                            BOARD_USART2_TX_PIN, false,
+                            BOARD_USART2_TX_AF);
+      ht32f491x3_configgpio(BOARD_USART2_RX_GPIO_BASE,
+                            BOARD_USART2_RX_PIN, true,
+                            BOARD_USART2_RX_AF);
+      return;
+    }
+#endif
+
+#ifdef BOARD_USART3_GPIO_CLKEN
+  if (uartbase == HT32_USART3_BASE)
+    {
+      modifyreg32(HT32_CRM_AHBEN1, 0, BOARD_USART3_GPIO_CLKEN);
+      ht32f491x3_configgpio(BOARD_USART3_TX_GPIO_BASE,
+                            BOARD_USART3_TX_PIN, false,
+                            BOARD_USART3_TX_AF);
+      ht32f491x3_configgpio(BOARD_USART3_RX_GPIO_BASE,
+                            BOARD_USART3_RX_PIN, true,
+                            BOARD_USART3_RX_AF);
+    }
+#endif
 }
 
 void arm_lowputc(char ch)
@@ -163,11 +234,11 @@ void ht32f491x3_lowsetup(void)
 
   if (HT32_CONSOLE_PARITY == 1)
     {
-      regval |= HT32_USART_CTRL1_PEN | HT32_USART_CTRL1_PSEL;
+      regval |= HT32_USART_CTRL1_PEN;
     }
   else if (HT32_CONSOLE_PARITY == 2)
     {
-      regval |= HT32_USART_CTRL1_PEN;
+      regval |= HT32_USART_CTRL1_PEN | HT32_USART_CTRL1_PSEL;
     }
 
   if (HT32_CONSOLE_BITS == 9 ||

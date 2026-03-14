@@ -24,11 +24,11 @@ endchoice
 
 config HT32F491X3_SYSCLK_FREQUENCY
 	int "System clock frequency"
-	default 48000000
+	default 8000000
 	range 1 150000000
 	depends on ARCH_CHIP_HT32F491X3
 	---help---
-		The reset clock tree runs from the 48 MHz HICK oscillator. Adjust
+		The reset clock tree runs from the 8 MHz HICK oscillator. Adjust
 		this if board-specific CRM/PLL setup changes SYSCLK before the
 		generic timer or serial logic runs.
 
@@ -60,20 +60,6 @@ config HT32F491X3_USART1_SERIALDRIVER
 	---help---
 		Enable the standard lower-half driver for USART1.
 
-config HT32F491X3_USART2_SERIALDRIVER
-	bool "USART2"
-	default n
-	select USART2_SERIALDRIVER
-	select ARCH_HAVE_SERIAL_TERMIOS
-	---help---
-		Enable the standard lower-half driver for USART2.
-
-config HT32F491X3_USART3_SERIALDRIVER
-	bool "USART3"
-	default n
-	select USART3_SERIALDRIVER
-	select ARCH_HAVE_SERIAL_TERMIOS
-	---help---
-		Enable the standard lower-half driver for USART3.
+comment "In this current version, only USART1 is exposed by the esk32 board support."
 
 endmenu # "Peripheral Support"

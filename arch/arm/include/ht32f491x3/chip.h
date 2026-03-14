@@ -52,10 +52,11 @@
 #endif
 
 #define HT32_SRAM_KB             48
-#define HT32_NUSART              3
-#define HT32_NGPIO               8
+#define HT32_NUSART              8
+#define HT32_NGPIO               6
 
-#define HT32_HICK_FREQUENCY      48000000
+#define HT32_HICK_FREQUENCY       8000000
+#define HT32_HICK48_FREQUENCY    48000000
 #define HT32_HEXT_MIN_FREQUENCY   4000000
 #define HT32_HEXT_MAX_FREQUENCY  25000000
 #define HT32_PLL_MAX_FREQUENCY  150000000

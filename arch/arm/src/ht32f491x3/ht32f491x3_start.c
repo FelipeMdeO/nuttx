@@ -58,6 +58,10 @@ const uintptr_t g_idle_topstack = (uintptr_t)_END_BSS +
  * Public Functions
  ****************************************************************************/
 
+void weak_function ht32f491x3_clockconfig(void)
+{
+}
+
 void __start(void) __attribute__((section(".entry")));
 void __start(void)
 {
@@ -66,10 +70,10 @@ void __start(void)
 
   up_irq_disable();
 
-  /* Leave the reset clock tree running from HICK until board-specific
-   * initialization decides to change CRM or PLL settings.
+  /* Let the board tune CRM before the early console computes its divisors.
    */
 
+  ht32f491x3_clockconfig();
   ht32f491x3_lowsetup();
   showprogress('A');
 

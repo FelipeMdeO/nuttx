@@ -38,18 +38,16 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* External interrupts.
- *
- * The numbering up to USART3 follows Table 3 from the Holtek user manual.
- * Later vectors keep the STM32F4-compatible placement used by this family so
- * the NVIC geometry stays correct even before the rest of the peripherals are
- * implemented.
+/* External interrupts.  These values follow the Holtek CMSIS device header
+ * and startup vector table for the HT32F491x3 family.
  */
 
 #define HT32_IRQ_WWDT          (HT32_IRQ_FIRST + 0)
-#define HT32_IRQ_PVD           (HT32_IRQ_FIRST + 1)
-#define HT32_IRQ_TAMPER        (HT32_IRQ_FIRST + 2)
-#define HT32_IRQ_TIMESTAMP     HT32_IRQ_TAMPER
+#define HT32_IRQ_PVM           (HT32_IRQ_FIRST + 1)
+#define HT32_IRQ_PVD           HT32_IRQ_PVM
+#define HT32_IRQ_TAMP_STAMP    (HT32_IRQ_FIRST + 2)
+#define HT32_IRQ_TAMPER        HT32_IRQ_TAMP_STAMP
+#define HT32_IRQ_TIMESTAMP     HT32_IRQ_TAMP_STAMP
 #define HT32_IRQ_ERTCWAKEUP    (HT32_IRQ_FIRST + 3)
 #define HT32_IRQ_FLASH         (HT32_IRQ_FIRST + 4)
 #define HT32_IRQ_CRM           (HT32_IRQ_FIRST + 5)
@@ -65,11 +63,13 @@
 #define HT32_IRQ_DMA1CH5       (HT32_IRQ_FIRST + 15)
 #define HT32_IRQ_DMA1CH6       (HT32_IRQ_FIRST + 16)
 #define HT32_IRQ_DMA1CH7       (HT32_IRQ_FIRST + 17)
-#define HT32_IRQ_ADC           (HT32_IRQ_FIRST + 18)
+#define HT32_IRQ_ADC1          (HT32_IRQ_FIRST + 18)
+#define HT32_IRQ_ADC           HT32_IRQ_ADC1
 #define HT32_IRQ_CAN1TX        (HT32_IRQ_FIRST + 19)
 #define HT32_IRQ_CAN1RX0       (HT32_IRQ_FIRST + 20)
 #define HT32_IRQ_CAN1RX1       (HT32_IRQ_FIRST + 21)
-#define HT32_IRQ_CANSE         (HT32_IRQ_FIRST + 22)
+#define HT32_IRQ_CAN1SE        (HT32_IRQ_FIRST + 22)
+#define HT32_IRQ_CANSE         HT32_IRQ_CAN1SE
 #define HT32_IRQ_EXINT95       (HT32_IRQ_FIRST + 23)
 #define HT32_IRQ_TMR1BRK       (HT32_IRQ_FIRST + 24)
 #define HT32_IRQ_TMR9          HT32_IRQ_TMR1BRK
@@ -93,17 +93,9 @@
 #define HT32_IRQ_EXINT1510     (HT32_IRQ_FIRST + 40)
 #define HT32_IRQ_ERTCALARM     (HT32_IRQ_FIRST + 41)
 #define HT32_IRQ_OTGFSWKUP     (HT32_IRQ_FIRST + 42)
-#define HT32_IRQ_TMR8BRK       (HT32_IRQ_FIRST + 43)
-#define HT32_IRQ_TMR12         HT32_IRQ_TMR8BRK
-#define HT32_IRQ_TMR8UP        (HT32_IRQ_FIRST + 44)
-#define HT32_IRQ_TMR13         HT32_IRQ_TMR8UP
-#define HT32_IRQ_TMR8TRGCOM    (HT32_IRQ_FIRST + 45)
-#define HT32_IRQ_TMR14         HT32_IRQ_TMR8TRGCOM
-#define HT32_IRQ_TMR8CC        (HT32_IRQ_FIRST + 46)
-#define HT32_IRQ_DMA1CH8       (HT32_IRQ_FIRST + 47)
-#define HT32_IRQ_XMC           (HT32_IRQ_FIRST + 48)
-#define HT32_IRQ_SDIO          (HT32_IRQ_FIRST + 49)
-#define HT32_IRQ_TMR5          (HT32_IRQ_FIRST + 50)
+#define HT32_IRQ_TMR12         (HT32_IRQ_FIRST + 43)
+#define HT32_IRQ_TMR13         (HT32_IRQ_FIRST + 44)
+#define HT32_IRQ_TMR14         (HT32_IRQ_FIRST + 45)
 #define HT32_IRQ_SPI3          (HT32_IRQ_FIRST + 51)
 #define HT32_IRQ_USART4        (HT32_IRQ_FIRST + 52)
 #define HT32_IRQ_USART5        (HT32_IRQ_FIRST + 53)
@@ -119,15 +111,20 @@
 #define HT32_IRQ_CAN2RX0       (HT32_IRQ_FIRST + 64)
 #define HT32_IRQ_CAN2RX1       (HT32_IRQ_FIRST + 65)
 #define HT32_IRQ_CAN2SE        (HT32_IRQ_FIRST + 66)
-#define HT32_IRQ_OTGFS         (HT32_IRQ_FIRST + 67)
+#define HT32_IRQ_OTGFS1        (HT32_IRQ_FIRST + 67)
+#define HT32_IRQ_OTGFS         HT32_IRQ_OTGFS1
 #define HT32_IRQ_DMA2CH6       (HT32_IRQ_FIRST + 68)
 #define HT32_IRQ_DMA2CH7       (HT32_IRQ_FIRST + 69)
 #define HT32_IRQ_USART6        (HT32_IRQ_FIRST + 71)
 #define HT32_IRQ_I2C3EV        (HT32_IRQ_FIRST + 72)
 #define HT32_IRQ_I2C3ERR       (HT32_IRQ_FIRST + 73)
 #define HT32_IRQ_FPU           (HT32_IRQ_FIRST + 81)
+#define HT32_IRQ_USART7        (HT32_IRQ_FIRST + 82)
+#define HT32_IRQ_USART8        (HT32_IRQ_FIRST + 83)
+#define HT32_IRQ_DMAMUX        (HT32_IRQ_FIRST + 94)
+#define HT32_IRQ_ACC           (HT32_IRQ_FIRST + 103)
 
-#define HT32_IRQ_NEXTINT       (96)
+#define HT32_IRQ_NEXTINT       (104)
 #define NR_IRQS                (HT32_IRQ_FIRST + HT32_IRQ_NEXTINT)
 
 #endif /* __ARCH_ARM_INCLUDE_HT32F491X3_HT32F491X3_IRQ_H */

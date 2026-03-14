@@ -357,11 +357,11 @@ static void up_set_format(FAR struct uart_dev_s *dev)
 
   if (priv->parity == 1)
     {
-      regval |= HT32_USART_CTRL1_PEN | HT32_USART_CTRL1_PSEL;
+      regval |= HT32_USART_CTRL1_PEN;
     }
   else if (priv->parity == 2)
     {
-      regval |= HT32_USART_CTRL1_PEN;
+      regval |= HT32_USART_CTRL1_PEN | HT32_USART_CTRL1_PSEL;
     }
 
   if (priv->bits == 9 || (priv->bits == 8 && priv->parity != 0))

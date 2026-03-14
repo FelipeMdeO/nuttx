@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/ht32f491x3/ht32f491x3_start.h
+ * arch/arm/src/ht32f491x3/hardware/ht32f491x3_pwc.h
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,8 +20,8 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_HT32F491X3_HT32F491X3_START_H
-#define __ARCH_ARM_SRC_HT32F491X3_HT32F491X3_START_H
+#ifndef __ARCH_ARM_SRC_HT32F491X3_HARDWARE_HT32F491X3_PWC_H
+#define __ARCH_ARM_SRC_HT32F491X3_HARDWARE_HT32F491X3_PWC_H
 
 /****************************************************************************
  * Included Files
@@ -29,11 +29,20 @@
 
 #include <nuttx/config.h>
 
+#include "ht32f491x3_memorymap.h"
+
 /****************************************************************************
- * Public Function Prototypes
+ * Pre-processor Definitions
  ****************************************************************************/
 
-void ht32f491x3_clockconfig(void);
-void ht32f491x3_boardinitialize(void);
+#define HT32_PWC_LDOOV_OFFSET           0x010
 
-#endif /* __ARCH_ARM_SRC_HT32F491X3_HT32F491X3_START_H */
+#define HT32_PWC_LDOOV                  (HT32_PWC_BASE + HT32_PWC_LDOOV_OFFSET)
+
+#define HT32_PWC_LDOOVSEL_SHIFT         0
+#define HT32_PWC_LDOOVSEL_MASK          (3 << HT32_PWC_LDOOVSEL_SHIFT)
+#define HT32_PWC_LDO_OUTPUT_1V1         (1 << HT32_PWC_LDOOVSEL_SHIFT)
+#define HT32_PWC_LDO_OUTPUT_1V2         (2 << HT32_PWC_LDOOVSEL_SHIFT)
+#define HT32_PWC_LDO_OUTPUT_1V3         (3 << HT32_PWC_LDOOVSEL_SHIFT)
+
+#endif /* __ARCH_ARM_SRC_HT32F491X3_HARDWARE_HT32F491X3_PWC_H */
