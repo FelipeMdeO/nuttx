@@ -54,6 +54,32 @@ config HT32F491X3_PCLK2_FREQUENCY
 
 menu "Peripheral Support"
 
+config HT32F491X3_TMR3
+	bool "TMR3"
+	default n
+	---help---
+		Enable support for the TMR3 peripheral.
+
+config HT32F491X3_TMR3_PWM
+	bool "TMR3 PWM output"
+	default n
+	depends on HT32F491X3_TMR3 && PWM
+	---help---
+		Use TMR3 as the lower-half PWM device.
+
+config HT32F491X3_TMR3_CHANNEL
+	int "TMR3 PWM channel"
+	default 1
+	range 1 4
+	depends on HT32F491X3_TMR3_PWM
+	---help---
+		Select which TMR3 channel is exposed as /dev/pwm0.
+		Channel-to-pin mapping on the esk32 board:
+		  1 -> PA6
+		  2 -> PA7
+		  3 -> PB0
+		  4 -> PB1
+
 config HT32F491X3_USART1_SERIALDRIVER
 	bool "USART1"
 	default y
@@ -63,5 +89,7 @@ config HT32F491X3_USART1_SERIALDRIVER
 		Enable the standard lower-half driver for USART1.
 
 comment "In this current version, only USART1 is exposed by the esk32 board support."
+
+comment "PWM output is currently supported through TMR3 channels PA6/PA7/PB0/PB1."
 
 endmenu # "Peripheral Support"

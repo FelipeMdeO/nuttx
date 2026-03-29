@@ -49,6 +49,39 @@
 #define BOARD_USART1_RX_AF             7u
 
 /****************************************************************************
+ * Board PWM Pin Mapping
+ ****************************************************************************/
+
+#if defined(CONFIG_HT32F491X3_TMR3_PWM)
+#  define BOARD_PWM0_TIMER             3
+#  define BOARD_PWM0_CHANNEL           CONFIG_HT32F491X3_TMR3_CHANNEL
+
+#  if CONFIG_HT32F491X3_TMR3_CHANNEL == 1
+#    define BOARD_PWM0_GPIO_CLKEN      (1u << 0)
+#    define BOARD_PWM0_GPIO_BASE       0x40020000u
+#    define BOARD_PWM0_GPIO_PIN        6u
+#    define BOARD_PWM0_GPIO_AF         2u
+#  elif CONFIG_HT32F491X3_TMR3_CHANNEL == 2
+#    define BOARD_PWM0_GPIO_CLKEN      (1u << 0)
+#    define BOARD_PWM0_GPIO_BASE       0x40020000u
+#    define BOARD_PWM0_GPIO_PIN        7u
+#    define BOARD_PWM0_GPIO_AF         2u
+#  elif CONFIG_HT32F491X3_TMR3_CHANNEL == 3
+#    define BOARD_PWM0_GPIO_CLKEN      (1u << 1)
+#    define BOARD_PWM0_GPIO_BASE       0x40020400u
+#    define BOARD_PWM0_GPIO_PIN        0u
+#    define BOARD_PWM0_GPIO_AF         2u
+#  elif CONFIG_HT32F491X3_TMR3_CHANNEL == 4
+#    define BOARD_PWM0_GPIO_CLKEN      (1u << 1)
+#    define BOARD_PWM0_GPIO_BASE       0x40020400u
+#    define BOARD_PWM0_GPIO_PIN        1u
+#    define BOARD_PWM0_GPIO_AF         2u
+#  else
+#    error "Unsupported CONFIG_HT32F491X3_TMR3_CHANNEL value"
+#  endif
+#endif
+
+/****************************************************************************
  * Board LED Pin Mapping
  ****************************************************************************/
 
@@ -81,6 +114,10 @@ void ht32f491x3_clockconfig(void);
 void ht32f491x3_boardinitialize(void);
 
 int board_app_initialize(uintptr_t arg);
+
+#ifdef CONFIG_PWM
+int ht32_pwm_setup(void);
+#endif
 
 #if defined(CONFIG_USERLED) && !defined(CONFIG_ARCH_LEDS)
 uint32_t board_userled_initialize(void);
