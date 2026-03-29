@@ -6,8 +6,7 @@ ESK32 (HT32F49163)
 
 The ESK32 is a development board based on the Holtek HT32F49163 MCU.
 The current NuttX port targets the HT32F49163 device used on the
-HT32F49163 development kit and focuses on a working serial-console NSH
-configuration with basic board bring-up plus timer-based PWM validation.
+HT32F49163 development kit with board bring-up.
 
 For additional hardware details, refer to Holtek's
 `HT32F491x3 Starter Kit User Guide <https://www.holtek.com/webapi/106680/HT32F491x3_StarterKitUserManualv100.pdf>`_.
@@ -29,6 +28,7 @@ The current port provides:
 * System clock configured to 150 MHz
 * USART1 serial console at 115200 8N1
 * TMR3 PWM output exposed through ``/dev/pwm0``
+* TMR2 pulse counter input exposed through ``/dev/pcnt0``
 * ``/bin`` mounted through ``binfs``
 * ``/proc`` mounted through ``procfs``
 * User LED registration through ``/dev/userleds``
@@ -45,6 +45,10 @@ applications:
 The ``esk32:pwm`` configuration keeps the same board bring-up and adds the
 ``pwm`` example application together with a board-level PWM device at
 ``/dev/pwm0``.
+
+The ``esk32:pulsecount`` configuration keeps the same board bring-up and adds
+the ``cap`` and ``pwm`` example applications together with board-level
+devices at ``/dev/pcnt0`` and ``/dev/pwm0`` for pulse counter validation.
 
 Buttons and LEDs
 ================
@@ -80,6 +84,7 @@ The current port uses the following MCU pins:
 ===== ========== ==========
 Pin   Signal     Notes
 ===== ========== ==========
+PA1   TMR2_CH2   ``/dev/pcnt0`` pulse counter input in ``esk32:pulsecount``
 PA6   TMR3_CH1   Default ``/dev/pwm0`` output in ``esk32:pwm``
 PA7   TMR3_CH2   Alternate ``/dev/pwm0`` output when channel 2 is selected
 PA9   USART1_TX  Default serial console TX
@@ -151,6 +156,22 @@ pulse on ``PA6``. A typical console log is:
    pwm_main: starting output with frequency: 1000 duty: 00007fff
    pwm_main: stopping output
 
+The ``esk32:pulsecount`` configuration exposes ``/dev/pcnt0`` through TMR2
+using ``PA1`` as the pulse counter input. A convenient board-level loopback
+test connects ``PA6`` to ``PA1`` with a jumper, then starts PWM in the
+background and samples the pulse counter:
+
+.. code-block:: console
+
+   nsh> pwm -f 1000 -d 50 -t 3600 &
+   nsh> cap -p /dev/pcnt0 -n 10 -t 1000
+
+The expected result is a 1 kHz, 50% duty-cycle waveform on ``PA6`` and a
+pulse counter report close to 1000 Hz with the edge count increasing by about
+1000 counts per second. The ``cap`` example always prints a duty-cycle field,
+but for ``/dev/pcnt0`` that value is reported as ``0`` because the driver only
+counts pulses.
+
 Peripheral Support
 ==================
 
@@ -169,9 +190,9 @@ Peripheral Support
 +---------------------+---------+-------------------------------------+
 | PWM                 | Yes     | TMR3 exposed as ``/dev/pwm0``       |
 +---------------------+---------+-------------------------------------+
-| Pulse Counter       | No      |                                     |
+| Pulse Counter       | Yes     | TMR2 exposed as ``/dev/pcnt0``      |
 +---------------------+---------+-------------------------------------+
-| Timers              | Partial | OS tick and TMR3 PWM                |
+| Timers              | Partial | OS tick, TMR3 PWM and TMR2 counter  |
 +---------------------+---------+-------------------------------------+
 | SPI                 | No      |                                     |
 +---------------------+---------+-------------------------------------+
@@ -281,3 +302,33 @@ Other TMR3 output pins can be selected at configuration time through
 * channel 2: ``PA7``
 * channel 3: ``PB0``
 * channel 4: ``PB1``
+
+pulsecount
+----------
+
+This configuration enables the generic capture framework, registers the TMR2
+pulse counter lower-half driver as ``/dev/pcnt0``, keeps the TMR3 PWM
+lower-half driver as ``/dev/pwm0``, and includes the ``cap`` and ``pwm``
+example applications for board-level validation.
+
+Configure and build it from the ``nuttx`` directory:
+
+.. code-block:: console
+
+   $ ./tools/configure.sh -l esk32:pulsecount
+   $ make olddefconfig
+   $ make -j
+
+The generated defconfig routes ``/dev/pwm0`` to ``PA6`` and ``/dev/pcnt0`` to
+``PA1``. After flashing the image, install a jumper from ``PA6`` to ``PA1``
+and run:
+
+.. code-block:: console
+
+   nsh> pwm -f 1000 -d 50 -t 3600 &
+   nsh> cap -p /dev/pcnt0 -n 10 -t 1000
+
+The expected result is a 1 kHz PWM waveform generated on ``PA6`` and a pulse
+counter report near 1000 Hz with the accumulated edge count increasing by
+about 1000 every second. The duty-cycle field printed by ``cap`` remains ``0``
+because ``/dev/pcnt0`` reports pulse count and frequency rather than duty.
