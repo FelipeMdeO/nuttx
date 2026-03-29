@@ -82,6 +82,18 @@
 #endif
 
 /****************************************************************************
+ * Board Pulse Counter Pin Mapping
+ ****************************************************************************/
+
+#if defined(CONFIG_HT32F491X3_TMR2_PULSECOUNT)
+#  define BOARD_PCNT0_TIMER            2
+#  define BOARD_PCNT0_GPIO_CLKEN       (1u << 0)
+#  define BOARD_PCNT0_GPIO_BASE        0x40020000u
+#  define BOARD_PCNT0_GPIO_PIN         1u
+#  define BOARD_PCNT0_GPIO_AF          1u
+#endif
+
+/****************************************************************************
  * Board LED Pin Mapping
  ****************************************************************************/
 
@@ -117,6 +129,10 @@ int board_app_initialize(uintptr_t arg);
 
 #ifdef CONFIG_PWM
 int ht32_pwm_setup(void);
+#endif
+
+#ifdef CONFIG_CAPTURE
+int ht32_pcnt_setup(void);
 #endif
 
 #if defined(CONFIG_USERLED) && !defined(CONFIG_ARCH_LEDS)

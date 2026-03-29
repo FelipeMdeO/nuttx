@@ -38,4 +38,8 @@ ifeq ($(CONFIG_PWM),y)
 CSRCS += ht32_pwm.c
 endif
 
+ifeq ($(CONFIG_CAPTURE),y)
+CSRCS += ht32_pcnt.c
+endif
+
 include $(TOPDIR)/boards/Board.mk

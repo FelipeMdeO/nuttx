@@ -66,6 +66,15 @@ static int ht32_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_CAPTURE
+  tmp = ht32_pcnt_setup();
+  if (tmp < 0 && tmp != -EEXIST)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to register /dev/pcnt0: %d\n", tmp);
+      ret = tmp;
+    }
+#endif
+
 #ifdef CONFIG_FS_BINFS
   tmp = nx_mount(NULL, "/bin", "binfs", 0, NULL);
   if (tmp < 0 && tmp != -EBUSY)

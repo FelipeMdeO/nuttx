@@ -37,6 +37,9 @@
 
 #define HT32_TMR_CTRL1_OFFSET          0x0000
 #define HT32_TMR_CTRL2_OFFSET          0x0004
+#define HT32_TMR_STCTRL_OFFSET         0x0008
+#define HT32_TMR_IDEN_OFFSET           0x000c
+#define HT32_TMR_ISTS_OFFSET           0x0010
 #define HT32_TMR_SWEVT_OFFSET          0x0014
 #define HT32_TMR_CM1_OFFSET            0x0018
 #define HT32_TMR_CM2_OFFSET            0x001c
@@ -58,6 +61,34 @@
 #define HT32_TMR_CTRL1_CNTDIR_MASK     (7u << HT32_TMR_CTRL1_CNTDIR_SHIFT)
 #define HT32_TMR_CTRL1_COUNTUP         (0u << HT32_TMR_CTRL1_CNTDIR_SHIFT)
 #define HT32_TMR_CTRL1_PRBEN           (1u << 7)
+#define HT32_TMR_CTRL1_CLKDIV_SHIFT    8
+#define HT32_TMR_CTRL1_CLKDIV_MASK     (3u << HT32_TMR_CTRL1_CLKDIV_SHIFT)
+#define HT32_TMR_CTRL1_PMEN            (1u << 10)
+
+/* Subordinate control register *********************************************/
+
+#define HT32_TMR_STCTRL_SMSEL_SHIFT    0
+#define HT32_TMR_STCTRL_SMSEL_MASK     (7u << HT32_TMR_STCTRL_SMSEL_SHIFT)
+#define HT32_TMR_STCTRL_SMSEL(mode)    ((uint32_t)(mode) << \
+                                        HT32_TMR_STCTRL_SMSEL_SHIFT)
+#define HT32_TMR_STCTRL_STIS_SHIFT     4
+#define HT32_TMR_STCTRL_STIS_MASK      (7u << HT32_TMR_STCTRL_STIS_SHIFT)
+#define HT32_TMR_STCTRL_STIS(sel)      ((uint32_t)(sel) << \
+                                        HT32_TMR_STCTRL_STIS_SHIFT)
+
+#define HT32_TMR_ENCODER_MODE_A        1u
+#define HT32_TMR_ENCODER_MODE_B        2u
+#define HT32_TMR_ENCODER_MODE_C        3u
+#define HT32_TMR_EXTERNAL_CLOCK_MODE_A 7u
+
+#define HT32_TMR_TRIGGER_C1INC         4u
+#define HT32_TMR_TRIGGER_C1DF1         5u
+#define HT32_TMR_TRIGGER_C2DF2         6u
+#define HT32_TMR_TRIGGER_EXTIN         7u
+
+/* Interrupt enable and status registers ************************************/
+
+#define HT32_TMR_INT_OVF               (1u << 0)
 
 /* Event generation register ************************************************/
 
@@ -68,6 +99,14 @@
 #define HT32_TMR_CM_CAPTURE_SEL_SHIFT(slot)   ((slot) * 8)
 #define HT32_TMR_CM_CAPTURE_SEL_MASK(slot)    (3u << \
                                                HT32_TMR_CM_CAPTURE_SEL_SHIFT(slot))
+#define HT32_TMR_CM_CAPTURE_SEL(slot, sel)    ((uint32_t)(sel) << \
+                                               HT32_TMR_CM_CAPTURE_SEL_SHIFT(slot))
+#define HT32_TMR_CM_INPUT_DIV_SHIFT(slot)     ((slot) * 8 + 2)
+#define HT32_TMR_CM_INPUT_DIV_MASK(slot)      (3u << \
+                                               HT32_TMR_CM_INPUT_DIV_SHIFT(slot))
+#define HT32_TMR_CM_INPUT_FILTER_SHIFT(slot)  ((slot) * 8 + 4)
+#define HT32_TMR_CM_INPUT_FILTER_MASK(slot)   (15u << \
+                                               HT32_TMR_CM_INPUT_FILTER_SHIFT(slot))
 #define HT32_TMR_CM_OUTPUT_BUFFER_SHIFT(slot) ((slot) * 8 + 3)
 #define HT32_TMR_CM_OUTPUT_BUFFER(slot)       (1u << \
                                                HT32_TMR_CM_OUTPUT_BUFFER_SHIFT(slot))
@@ -83,6 +122,8 @@
 #define HT32_TMR_CCTRL_EN(ch)          (1u << HT32_TMR_CCTRL_EN_SHIFT(ch))
 #define HT32_TMR_CCTRL_POL_SHIFT(ch)   (HT32_TMR_CCTRL_EN_SHIFT(ch) + 1u)
 #define HT32_TMR_CCTRL_POL(ch)         (1u << HT32_TMR_CCTRL_POL_SHIFT(ch))
+#define HT32_TMR_CCTRL_COMPOL_SHIFT(ch) (HT32_TMR_CCTRL_EN_SHIFT(ch) + 3u)
+#define HT32_TMR_CCTRL_COMPOL(ch)      (1u << HT32_TMR_CCTRL_COMPOL_SHIFT(ch))
 
 /* Brake register ***********************************************************/
 
@@ -91,6 +132,10 @@
 /* Output compare mode values ***********************************************/
 
 #define HT32_TMR_OUTPUT_CONTROL_PWM_A  6u
+
+/* Input capture selection values *******************************************/
+
+#define HT32_TMR_CAPTURE_DIRECT        1u
 
 /* Helper macros ************************************************************/
 

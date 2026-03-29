@@ -60,6 +60,21 @@ config HT32F491X3_TMR3
 	---help---
 		Enable support for the TMR3 peripheral.
 
+config HT32F491X3_TMR2
+	bool "TMR2"
+	default n
+	---help---
+		Enable support for the TMR2 peripheral.
+
+config HT32F491X3_TMR2_PULSECOUNT
+	bool "TMR2 pulse counter"
+	default n
+	depends on HT32F491X3_TMR2 && CAPTURE
+	---help---
+		Use TMR2 as the lower-half pulse counter device.
+		The esk32 board routes the default pulse input as:
+		  TI2 -> PA1
+
 config HT32F491X3_TMR3_PWM
 	bool "TMR3 PWM output"
 	default n
@@ -91,5 +106,7 @@ config HT32F491X3_USART1_SERIALDRIVER
 comment "In this current version, only USART1 is exposed by the esk32 board support."
 
 comment "PWM output is currently supported through TMR3 channels PA6/PA7/PB0/PB1."
+
+comment "Pulse counter input is currently supported through TMR2 channel 2 on PA1."
 
 endmenu # "Peripheral Support"
