@@ -21,6 +21,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <assert.h>
 #include <endian.h>
 #include <sys/param.h>
 
@@ -70,6 +71,39 @@ void chacha20_crypt(caddr_t key, FAR uint8_t *data)
 
   chacha_encrypt_bytes((FAR chacha_ctx *)ctx->block, data, data,
                        CHACHA20_BLOCK_LEN);
+}
+
+static_assert(sizeof(struct chacha20_stream_ctx) == sizeof(chacha_ctx),
+              "chacha20_stream_ctx must mirror the private chacha_ctx");
+
+void chacha20_stream_setkey(FAR struct chacha20_stream_ctx *ctx,
+                            FAR const uint8_t *key)
+{
+  chacha_keysetup((FAR chacha_ctx *)ctx, key, CHACHA20_KEYSIZE * 8);
+}
+
+void chacha20_stream_ivctr64(FAR struct chacha20_stream_ctx *ctx,
+                             FAR const uint8_t *iv, uint64_t counter)
+{
+  uint8_t ctr[8];
+
+  ctr[0] = counter;
+  ctr[1] = counter >> 8;
+  ctr[2] = counter >> 16;
+  ctr[3] = counter >> 24;
+  ctr[4] = counter >> 32;
+  ctr[5] = counter >> 40;
+  ctr[6] = counter >> 48;
+  ctr[7] = counter >> 56;
+
+  chacha_ivsetup((FAR chacha_ctx *)ctx, iv, ctr);
+}
+
+void chacha20_stream_crypt(FAR struct chacha20_stream_ctx *ctx,
+                           FAR const uint8_t *in, FAR uint8_t *out,
+                           size_t len)
+{
+  chacha_encrypt_bytes((FAR chacha_ctx *)ctx, in, out, len);
 }
 
 void chacha20_poly1305_init(FAR void *xctx)

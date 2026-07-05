@@ -36,6 +36,24 @@ int chacha20_setkey(FAR void *, FAR uint8_t *, int);
 void chacha20_reinit(caddr_t, FAR uint8_t *);
 void chacha20_crypt(caddr_t, FAR uint8_t *);
 
+/* ChaCha20 keystream API with an 8-byte IV and an explicit 64-bit block
+ * counter, as used by the SSH chacha20-poly1305 construction.  The context
+ * layout mirrors the private chacha_ctx.
+ */
+
+struct chacha20_stream_ctx
+{
+  uint32_t input[16];
+};
+
+void chacha20_stream_setkey(FAR struct chacha20_stream_ctx *ctx,
+                            FAR const uint8_t *key);
+void chacha20_stream_ivctr64(FAR struct chacha20_stream_ctx *ctx,
+                             FAR const uint8_t *iv, uint64_t counter);
+void chacha20_stream_crypt(FAR struct chacha20_stream_ctx *ctx,
+                           FAR const uint8_t *in, FAR uint8_t *out,
+                           size_t len);
+
 #define POLY1305_KEYLEN 32
 #define POLY1305_TAGLEN 16
 #define POLY1305_BLOCK_LEN 16
