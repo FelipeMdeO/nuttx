@@ -318,6 +318,20 @@ const struct enc_xform enc_xform_chacha20_poly1305 =
   chacha20_reinit
 };
 
+const struct enc_xform enc_xform_chacha20 =
+{
+  CRYPTO_CHACHA20, "CHACHA20",
+  1, 16, 16, 32,
+  sizeof(struct chacha20_stream_ctx),
+  NULL,
+  NULL,
+  chacha20_stream_setkey,
+  chacha20_stream_reinit,
+  CHACHA20_BLOCK_LEN,
+  chacha20_stream_encrypt,
+  chacha20_stream_encrypt
+};
+
 const struct enc_xform enc_xform_null =
 {
   CRYPTO_NULL, "NULL",

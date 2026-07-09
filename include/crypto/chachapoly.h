@@ -32,9 +32,18 @@ struct chacha20_ctx
   uint8_t nonce[CHACHA20_NONCE];
 };
 
+struct chacha20_stream_ctx
+{
+  uint32_t input[16];
+};
+
 int chacha20_setkey(FAR void *, FAR uint8_t *, int);
 void chacha20_reinit(caddr_t, FAR uint8_t *);
 void chacha20_crypt(caddr_t, FAR uint8_t *);
+int chacha20_stream_setkey(FAR void *, FAR uint8_t *, int);
+void chacha20_stream_reinit(caddr_t, FAR uint8_t *);
+void chacha20_stream_encrypt(caddr_t, FAR const uint8_t *, FAR uint8_t *,
+                             size_t);
 
 #define POLY1305_KEYLEN 32
 #define POLY1305_TAGLEN 16

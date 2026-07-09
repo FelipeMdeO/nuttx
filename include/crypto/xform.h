@@ -80,6 +80,11 @@ struct enc_xform
   CODE void (*decrypt)(caddr_t, FAR uint8_t *);
   CODE int  (*setkey)(FAR void *, FAR uint8_t *, int len);
   CODE void (*reinit)(caddr_t, FAR uint8_t *);
+  uint16_t native_blocksize;
+  CODE void (*encrypt_multi)(caddr_t, FAR const uint8_t *, FAR uint8_t *,
+                             size_t);
+  CODE void (*decrypt_multi)(caddr_t, FAR const uint8_t *, FAR uint8_t *,
+                             size_t);
 };
 
 struct comp_algo
@@ -113,6 +118,7 @@ extern const struct enc_xform enc_xform_aes_ofb;
 extern const struct enc_xform enc_xform_aes_cfb_8;
 extern const struct enc_xform enc_xform_aes_cfb_128;
 extern const struct enc_xform enc_xform_chacha20_poly1305;
+extern const struct enc_xform enc_xform_chacha20;
 extern const struct enc_xform enc_xform_null;
 
 extern const struct auth_hash auth_hash_hmac_md5_96;

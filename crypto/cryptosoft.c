@@ -1045,6 +1045,25 @@ int swcr_encdec(FAR struct cryptop *crp, FAR struct cryptodesc *crd,
 
   buf = buf + crd->crd_skip;
   output = crp->crp_dst;
+
+  if (exf->encrypt_multi != NULL)
+    {
+      if (crd->crd_flags & CRD_F_ENCRYPT)
+        {
+          exf->encrypt_multi((caddr_t)sw->sw_kschedule,
+                             (FAR const uint8_t *)buf,
+                             (FAR uint8_t *)output, i);
+        }
+      else
+        {
+          exf->decrypt_multi((caddr_t)sw->sw_kschedule,
+                             (FAR const uint8_t *)buf,
+                             (FAR uint8_t *)output, i);
+        }
+
+      return 0;
+    }
+
   while (i > 0)
     {
       bcopy(buf, blk, exf->blocksize);
@@ -1624,6 +1643,9 @@ int swcr_newsession(FAR uint32_t *sid, FAR struct cryptoini *cri)
           case CRYPTO_CHACHA20_POLY1305:
             txf = &enc_xform_chacha20_poly1305;
             goto enccommon;
+          case CRYPTO_CHACHA20:
+            txf = &enc_xform_chacha20;
+            goto enccommon;
           case CRYPTO_NULL:
             txf = &enc_xform_null;
             goto enccommon;
@@ -1884,6 +1906,7 @@ int swcr_freesession(uint64_t tid)
           case CRYPTO_AES_CFB_8:
           case CRYPTO_AES_CFB_128:
           case CRYPTO_CHACHA20_POLY1305:
+          case CRYPTO_CHACHA20:
           case CRYPTO_NULL:
             txf = swd->sw_exf;
 
@@ -2021,6 +2044,7 @@ int swcr_process(struct cryptop *crp)
           case CRYPTO_AES_OFB:
           case CRYPTO_AES_CFB_8:
           case CRYPTO_AES_CFB_128:
+          case CRYPTO_CHACHA20:
             txf = sw->sw_exf;
 
             if (crp->crp_iv)
@@ -2034,9 +2058,16 @@ int swcr_process(struct cryptop *crp)
               }
             else
               {
+                /* Stream ciphers embed a full ivsize IV, not one
+                 * blocksize.
+                 */
+
+                size_t skip = txf->encrypt_multi != NULL ?
+                              txf->ivsize : txf->blocksize;
+
                 crd->crd_flags |= CRD_F_IV_PRESENT;
-                crd->crd_skip = txf->blocksize;
-                crd->crd_len -= txf->blocksize;
+                crd->crd_skip = skip;
+                crd->crd_len -= skip;
               }
 
             if ((crp->crp_etype = swcr_encdec(crp, crd, sw,
@@ -2427,6 +2458,7 @@ void swcr_init(void)
   algs[CRYPTO_AES_CFB_128] = CRYPTO_ALG_FLAG_SUPPORTED;
   algs[CRYPTO_CHACHA20_POLY1305] = CRYPTO_ALG_FLAG_SUPPORTED;
   algs[CRYPTO_CHACHA20_POLY1305_MAC] = CRYPTO_ALG_FLAG_SUPPORTED;
+  algs[CRYPTO_CHACHA20] = CRYPTO_ALG_FLAG_SUPPORTED;
   algs[CRYPTO_MD5] = CRYPTO_ALG_FLAG_SUPPORTED;
   algs[CRYPTO_POLY1305] = CRYPTO_ALG_FLAG_SUPPORTED;
   algs[CRYPTO_RIPEMD160] = CRYPTO_ALG_FLAG_SUPPORTED;
