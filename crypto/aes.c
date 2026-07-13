@@ -955,12 +955,14 @@ void aes_decrypt_ecb(FAR AES_CTX *ctx, FAR const uint8_t *src,
     }
 }
 
-void aes_encrypt(FAR AES_CTX *ctx, FAR const uint8_t *src, FAR uint8_t *dst)
+void nx_aes_encrypt(FAR AES_CTX *ctx, FAR const uint8_t *src,
+                    FAR uint8_t *dst)
 {
   aes_encrypt_ecb(ctx, src, dst, 1);
 }
 
-void aes_decrypt(FAR AES_CTX *ctx, FAR const uint8_t *src, FAR uint8_t *dst)
+void nx_aes_decrypt(FAR AES_CTX *ctx, FAR const uint8_t *src,
+                    FAR uint8_t *dst)
 {
   aes_decrypt_ecb(ctx, src, dst, 1);
 }

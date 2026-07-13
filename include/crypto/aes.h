@@ -48,8 +48,8 @@ typedef struct aes_ctx
 } AES_CTX;
 
 int aes_setkey(FAR AES_CTX *, FAR const uint8_t *, int);
-void aes_encrypt(FAR AES_CTX *, FAR const uint8_t *, FAR uint8_t *);
-void aes_decrypt(FAR AES_CTX *, FAR const uint8_t *, FAR uint8_t *);
+void nx_aes_encrypt(FAR AES_CTX *, FAR const uint8_t *, FAR uint8_t *);
+void nx_aes_decrypt(FAR AES_CTX *, FAR const uint8_t *, FAR uint8_t *);
 void aes_encrypt_ecb(FAR AES_CTX *, FAR const uint8_t *, FAR uint8_t *,
                      size_t);
 void aes_decrypt_ecb(FAR AES_CTX *, FAR const uint8_t *, FAR uint8_t *,

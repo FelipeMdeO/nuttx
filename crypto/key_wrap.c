@@ -80,7 +80,7 @@ void aes_key_wrap(FAR aes_key_wrap_ctx *ctx,
 
           /* B = AES(K, B) */
 
-          aes_encrypt(&ctx->ctx, (FAR uint8_t *)B, (FAR uint8_t *)B);
+          nx_aes_encrypt(&ctx->ctx, (FAR uint8_t *)B, (FAR uint8_t *)B);
 
           /* MSB(64, B) = MSB(64, B) ^ t */
 
@@ -134,7 +134,7 @@ int aes_key_unwrap(FAR aes_key_wrap_ctx *ctx,
 
           /* B = AES-1(K, B) */
 
-          aes_decrypt(&ctx->ctx, (FAR uint8_t *)B, (FAR uint8_t *)B);
+          nx_aes_decrypt(&ctx->ctx, (FAR uint8_t *)B, (FAR uint8_t *)B);
 
           /* A = MSB(64, B) */
 

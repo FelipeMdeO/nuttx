@@ -142,7 +142,7 @@ void aes_gmac_setkey(FAR void *xctx, FAR const uint8_t *key, uint16_t klen)
 
   /* prepare a hash subkey */
 
-  aes_encrypt(&ctx->K, ctx->ghash.H, ctx->ghash.H);
+  nx_aes_encrypt(&ctx->K, ctx->ghash.H, ctx->ghash.H);
 }
 
 void aes_gmac_reinit(FAR void *xctx, FAR const uint8_t *iv, uint16_t ivlen)
@@ -194,7 +194,7 @@ void aes_gmac_final(FAR uint8_t *digest, FAR void *xctx)
   /* do one round of GCTR */
 
   ctx->J[GMAC_BLOCK_LEN - 1] = 1;
-  aes_encrypt(&ctx->K, ctx->J, keystream);
+  nx_aes_encrypt(&ctx->K, ctx->J, keystream);
   for (i = 0; i < GMAC_DIGEST_LEN; i++)
     {
       digest[i] = ctx->ghash.S[i] ^ keystream[i];

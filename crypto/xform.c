@@ -610,12 +610,12 @@ int cast5_setkey(FAR void *sched, FAR uint8_t *key, int len)
 
 void aes_encrypt_xform(caddr_t key, FAR uint8_t *blk, size_t len)
 {
-  aes_encrypt((FAR AES_CTX *)key, blk, blk);
+  nx_aes_encrypt((FAR AES_CTX *)key, blk, blk);
 }
 
 void aes_decrypt_xform(caddr_t key, FAR uint8_t *blk, size_t len)
 {
-  aes_decrypt((FAR AES_CTX *)key, blk, blk);
+  nx_aes_decrypt((FAR AES_CTX *)key, blk, blk);
 }
 
 int aes_setkey_xform(FAR void *sched, FAR uint8_t *key, int len)
@@ -669,7 +669,7 @@ void aes_ctr_crypt(caddr_t key, FAR uint8_t *data, size_t len)
         }
     }
 
-  aes_encrypt(&ctx->ac_key, ctx->ac_block, keystream);
+  nx_aes_encrypt(&ctx->ac_key, ctx->ac_block, keystream);
   for (i = 0; i < AESCTR_BLOCKSIZE; i++)
     {
       data[i] ^= keystream[i];
@@ -797,7 +797,7 @@ void aes_ofb_encrypt(caddr_t key, FAR uint8_t *data, size_t len)
 
   ctx = (FAR struct aes_ofb_ctx *)key;
 
-  aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
+  nx_aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
   for (i = 0; i < AESOFB_IVSIZE; i++)
     {
       data[i] ^= ctx->iv[i];
@@ -836,7 +836,7 @@ void aes_cfb8_encrypt(caddr_t key, FAR uint8_t *data, size_t len)
   for (i = 0; i < AESOFB_IVSIZE; i++)
     {
       bcopy(ctx->iv, ov, AESOFB_IVSIZE);
-      aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
+      nx_aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
       data[i] ^= ctx->iv[0];
       ov[AESOFB_IVSIZE] = data[i];
       bcopy(ov + 1, ctx->iv, AESOFB_IVSIZE);
@@ -854,7 +854,7 @@ void aes_cfb8_decrypt(caddr_t key, FAR uint8_t *data, size_t len)
   for (i = 0; i < AESOFB_IVSIZE; i++)
     {
       bcopy(ctx->iv, ov, AESOFB_IVSIZE);
-      aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
+      nx_aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
       ov[AESOFB_IVSIZE] = data[i];
       data[i] ^= ctx->iv[0];
       bcopy(ov + 1, ctx->iv, AESOFB_IVSIZE);
@@ -868,7 +868,7 @@ void aes_cfb128_encrypt(caddr_t key, FAR uint8_t *data, size_t len)
 
   ctx = (FAR struct aes_ofb_ctx *)key;
 
-  aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
+  nx_aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
   for (i = 0; i < AESOFB_IVSIZE; i++)
     {
       data[i] ^= ctx->iv[i];
@@ -884,7 +884,7 @@ void aes_cfb128_decrypt(caddr_t key, FAR uint8_t *data, size_t len)
 
   ctx = (FAR struct aes_ofb_ctx *)key;
 
-  aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
+  nx_aes_encrypt(&ctx->ac_key, ctx->iv, ctx->iv);
   for (i = 0; i < AESOFB_IVSIZE; i++)
     {
       c = data[i];

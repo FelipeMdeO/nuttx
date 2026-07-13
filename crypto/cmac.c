@@ -79,7 +79,7 @@ void aes_cmac_update(FAR AES_CMAC_CTX *ctx,
         }
 
       XOR(ctx->m_last, ctx->X);
-      aes_encrypt(&ctx->aesctx, ctx->X, ctx->X);
+      nx_aes_encrypt(&ctx->aesctx, ctx->X, ctx->X);
       data += mlen;
       len -= mlen;
     }
@@ -89,7 +89,7 @@ void aes_cmac_update(FAR AES_CMAC_CTX *ctx,
       /* not last block */
 
       XOR(data, ctx->X);
-      aes_encrypt(&ctx->aesctx, ctx->X, ctx->X);
+      nx_aes_encrypt(&ctx->aesctx, ctx->X, ctx->X);
       data += 16;
       len -= 16;
     }
@@ -108,7 +108,7 @@ void aes_cmac_final(FAR uint8_t *digest,
   /* generate subkey K1 */
 
   memset(K, 0, sizeof K);
-  aes_encrypt(&ctx->aesctx, K, K);
+  nx_aes_encrypt(&ctx->aesctx, K, K);
 
   if (K[0] & 0x80)
     {
@@ -152,7 +152,7 @@ void aes_cmac_final(FAR uint8_t *digest,
     }
 
   XOR(ctx->m_last, ctx->X);
-  aes_encrypt(&ctx->aesctx, ctx->X, digest);
+  nx_aes_encrypt(&ctx->aesctx, ctx->X, digest);
 
   explicit_bzero(K, sizeof K);
 }
