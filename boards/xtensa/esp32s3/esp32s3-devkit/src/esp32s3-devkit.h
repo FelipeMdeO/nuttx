@@ -157,6 +157,27 @@ int board_bmp180_initialize(int devno, int busno);
 #endif
 
 /****************************************************************************
+ * Name: board_mpu6050_initialize
+ *
+ * Description:
+ *   Initialize and register the MPU6050 6-axis MotionTracker driver,
+ *   exposing it through uORB as /dev/uorb/sensor_accelN and
+ *   /dev/uorb/sensor_gyroN.
+ *
+ * Input Parameters:
+ *   devno - The device number, used to build the uORB device paths
+ *   busno - The I2C bus number
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SENSORS_MPU6050
+int board_mpu6050_initialize(int devno, int busno);
+#endif
+
+/****************************************************************************
  * Name: board_i2sdev_initialize
  *
  * Description:

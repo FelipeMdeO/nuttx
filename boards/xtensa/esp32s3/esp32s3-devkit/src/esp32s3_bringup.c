@@ -411,6 +411,17 @@ int esp32s3_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_SENSORS_MPU6050
+  /* Try to register MPU6050 device in I2C0 */
+
+  ret = board_mpu6050_initialize(0, ESP32S3_I2C0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR,
+             "Failed to initialize MPU6050 driver for I2C0: %d\n", ret);
+    }
+#endif
+
 #if defined(CONFIG_ESPRESSIF_I2S)
 
 #ifdef CONFIG_AUDIO_CS4344
