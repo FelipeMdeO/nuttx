@@ -43,6 +43,7 @@
 #include <nuttx/mutex.h>
 #include <nuttx/sensors/sensor.h>
 #include <nuttx/lib/lib.h>
+#include <nuttx/wqueue.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -96,6 +97,17 @@ struct sensor_user_s
   struct list_node node;       /* Node of users list */
   struct pollfd   *fds;        /* The poll structure of thread waiting events */
   sensor_role_t    role;       /* The is used to indicate user's role based on open flags */
+#ifdef CONFIG_SCHED_LPWORK
+
+  /* Paces POLLIN for a fetch() only lower half at the interval this user
+   * asked for: upper is the device it belongs to, and fetched is when
+   * POLLIN was last reported to it, in microseconds.
+   */
+
+  FAR struct sensor_upperhalf_s *upper;
+  struct work_s    work;
+  uint64_t         fetched;
+#endif
   bool             changed;    /* This is used to indicate event happens and need to
                                 * asynchronous notify other users
                                 */
@@ -143,6 +155,9 @@ static int     sensor_poll(FAR struct file *filep, FAR struct pollfd *fds,
                            bool setup);
 static ssize_t sensor_push_event(FAR void *priv, FAR const void *data,
                                  size_t bytes);
+#ifdef CONFIG_SCHED_LPWORK
+static void    sensor_fetch_worker(FAR void *arg);
+#endif
 
 /****************************************************************************
  * Private Data
@@ -688,6 +703,45 @@ static void sensor_pollnotify_one(FAR struct sensor_user_s *user,
   poll_notify(&user->fds, 1, eventset);
 }
 
+#ifdef CONFIG_SCHED_LPWORK
+
+/****************************************************************************
+ * Name: sensor_fetch_worker
+ *
+ * Description:
+ *   Report POLLIN to one subscriber of a fetch() only lower half, once per
+ *   the interval that subscriber asked for, and re-arm itself. A fetch()
+ *   only device produces nothing on its own, so this timer is what a rated
+ *   poll() waits on, the same way sensor_is_updated() gates a pushing one.
+ *
+ *   Armed by sensor_poll() on setup and cancelled on teardown, so it only
+ *   runs while somebody is actually polling.
+ *
+ ****************************************************************************/
+
+static void sensor_fetch_worker(FAR void *arg)
+{
+  FAR struct sensor_user_s *user = arg;
+  FAR struct sensor_upperhalf_s *upper = user->upper;
+
+  nxrmutex_lock(&upper->lock);
+
+  /* The poll was torn down while this was queued. Do not notify, and do
+   * not re-arm: sensor_poll() cleared fds before cancelling us.
+   */
+
+  if (user->fds != NULL)
+    {
+      user->fetched = sensor_get_timestamp();
+      sensor_pollnotify_one(user, POLLIN, SENSOR_ROLE_RD);
+      work_queue(LPWORK, &user->work, sensor_fetch_worker, user,
+                 USEC2TICK(user->state.interval));
+    }
+
+  nxrmutex_unlock(&upper->lock);
+}
+#endif
+
 static void sensor_pollnotify(FAR struct sensor_upperhalf_s *upper,
                               pollevent_t eventset, sensor_role_t role)
 {
@@ -714,6 +768,10 @@ static int sensor_open(FAR struct file *filep)
       ret = -ENOMEM;
       goto errout_with_lock;
     }
+
+#ifdef CONFIG_SCHED_LPWORK
+  user->upper = upper;
+#endif
 
   if ((filep->f_oflags & O_DIRECT) == 0 && lower->ops->open)
     {
@@ -808,6 +866,19 @@ static int sensor_close(FAR struct file *filep)
   sensor_update_interval(filep, upper, user, UINT32_MAX);
   sensor_update_latency(filep, upper, user, UINT32_MAX);
   sensor_update_nonwakeup(filep, upper, user, true);
+
+#ifdef CONFIG_SCHED_LPWORK
+  /* A close() racing an armed poll() would otherwise leave the worker
+   * queued against the user we are about to free. Clear fds first so a
+   * worker already running cannot re-arm itself past the cancel, then
+   * cancel outside the lock, since the worker takes it too.
+   */
+
+  nxrmutex_lock(&upper->lock);
+  user->fds = NULL;
+  nxrmutex_unlock(&upper->lock);
+  work_cancel_sync(LPWORK, &user->work);
+#endif
 
   nxrmutex_lock(&upper->lock);
 
@@ -1177,12 +1248,40 @@ static int sensor_poll(FAR struct file *filep,
       fds->priv = filep;
       if (lower->ops->fetch)
         {
-          /* Always return POLLIN for fetch only sensor: the data is read
-           * from the device on demand by sensor_read(), so there is never
-           * anything to wait for.
+          /* A fetch() only sensor is read from the device on demand, so it
+           * is always ready unless this subscriber asked for a rate, in
+           * which case it becomes ready once per interval and
+           * sensor_fetch_worker() is what wakes the poll.
+           */
+
+#ifdef CONFIG_SCHED_LPWORK
+          if (user->state.interval == UINT32_MAX)
+            {
+              eventset |= POLLIN;
+            }
+          else
+            {
+              uint64_t now = sensor_get_timestamp();
+              uint64_t elapsed = now - user->fetched;
+
+              if (elapsed >= user->state.interval)
+                {
+                  user->fetched = now;
+                  eventset |= POLLIN;
+                }
+              else
+                {
+                  work_queue(LPWORK, &user->work, sensor_fetch_worker, user,
+                             USEC2TICK(user->state.interval - elapsed));
+                }
+            }
+#else
+          /* Without a work queue there is nothing to pace the interval
+           * with, so fall back to reporting ready every time.
            */
 
           eventset |= POLLIN;
+#endif
         }
       else if (sensor_is_updated(upper, user))
         {
@@ -1204,6 +1303,19 @@ static int sensor_poll(FAR struct file *filep,
 
 errout:
   nxrmutex_unlock(&upper->lock);
+
+#ifdef CONFIG_SCHED_LPWORK
+  /* Cancel outside the lock: the worker takes it, so cancelling while
+   * holding it would deadlock. fds was cleared above, so a worker that is
+   * already running will neither notify nor re-arm.
+   */
+
+  if (!setup)
+    {
+      work_cancel_sync(LPWORK, &user->work);
+    }
+#endif
+
   return ret;
 }
 
