@@ -871,24 +871,18 @@ static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer,
           return -EINVAL;
         }
 
-      if (!(filep->f_oflags & O_NONBLOCK))
-        {
-          nxrmutex_unlock(&upper->lock);
-          ret = nxsem_wait_uninterruptible(&user->buffersem);
-          if (ret < 0)
-            {
-              return ret;
-            }
+      /* Fetch the data from the device directly, there is nothing to wait
+       * for. This matches the POLLIN sensor_poll() always reports for a
+       * fetch only sensor.
+       */
 
-          nxrmutex_lock(&upper->lock);
-        }
-      else if (!upper->state.nsubscribers)
+      if (!upper->state.nsubscribers)
         {
           ret = -EAGAIN;
           goto out;
         }
 
-        ret = lower->ops->fetch(lower, filep, buffer, len);
+      ret = lower->ops->fetch(lower, filep, buffer, len);
     }
   else if (circbuf_is_empty(&upper->buffer))
     {
@@ -1166,7 +1160,6 @@ static int sensor_poll(FAR struct file *filep,
   FAR struct sensor_lowerhalf_s *lower = upper->lower;
   FAR struct sensor_user_s *user = filep->f_priv;
   pollevent_t eventset = 0;
-  int semcount;
   int ret = 0;
 
   nxrmutex_lock(&upper->lock);
@@ -1184,20 +1177,12 @@ static int sensor_poll(FAR struct file *filep,
       fds->priv = filep;
       if (lower->ops->fetch)
         {
-          /* Always return POLLIN for fetch data directly(non-block) */
+          /* Always return POLLIN for fetch only sensor: the data is read
+           * from the device on demand by sensor_read(), so there is never
+           * anything to wait for.
+           */
 
-          if (filep->f_oflags & O_NONBLOCK)
-            {
-              eventset |= POLLIN;
-            }
-          else
-            {
-              nxsem_get_value(&user->buffersem, &semcount);
-              if (semcount > 0)
-                {
-                  eventset |= POLLIN;
-                }
-            }
+          eventset |= POLLIN;
         }
       else if (sensor_is_updated(upper, user))
         {
