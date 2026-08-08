@@ -183,8 +183,8 @@ static inline_function void rspin_lock_init(FAR rspinlock_t *lock)
 static inline_function void spin_lock_notrace(FAR volatile spinlock_t *lock)
 {
 #ifdef CONFIG_TICKET_SPINLOCK
-  int ticket = atomic_fetch_add(&lock->next, 1);
-  while (atomic_read(&lock->owner) != ticket)
+  int ticket = atomic_fetch_add((FAR atomic_t *)&lock->next, 1);
+  while (atomic_read((FAR atomic_t *)&lock->owner) != ticket)
 #else /* CONFIG_TICKET_SPINLOCK */
   while (up_testset(lock) == SP_LOCKED)
 #endif
@@ -276,8 +276,9 @@ static inline_function bool
 spin_trylock_notrace(FAR volatile spinlock_t *lock)
 {
 #ifdef CONFIG_TICKET_SPINLOCK
-  if (!atomic_cmpxchg(&lock->next, &lock->owner,
-                      atomic_read(&lock->next) + 1))
+  if (!atomic_cmpxchg((FAR atomic_t *)&lock->next,
+                      (FAR atomic_t *)&lock->owner,
+                      atomic_read((FAR atomic_t *)&lock->next) + 1))
 #else /* CONFIG_TICKET_SPINLOCK */
   if (up_testset(lock) == SP_LOCKED)
 #endif /* CONFIG_TICKET_SPINLOCK */
@@ -365,7 +366,7 @@ spin_unlock_notrace(FAR volatile spinlock_t *lock)
 {
   UP_DMB();
 #ifdef CONFIG_TICKET_SPINLOCK
-  atomic_fetch_add(&lock->owner, 1);
+  atomic_fetch_add((FAR atomic_t *)&lock->owner, 1);
 #else
   *lock = SP_UNLOCKED;
 #endif
@@ -429,7 +430,8 @@ static inline_function void spin_unlock(FAR volatile spinlock_t *lock)
 /* bool spin_islocked(FAR spinlock_t lock); */
 #ifdef CONFIG_TICKET_SPINLOCK
 #  define spin_is_locked(l) \
-    (atomic_read(&(*l).owner) != atomic_read(&(*l).next))
+    (atomic_read((FAR atomic_t *)&(*l).owner) != \
+     atomic_read((FAR atomic_t *)&(*l).next))
 #else
 #  define spin_is_locked(l) (*(l) == SP_LOCKED)
 #endif
