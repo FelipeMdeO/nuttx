@@ -498,4 +498,90 @@ void up_timer_initialize(void)
 #endif
 }
 
+/****************************************************************************
+ * Name: up_get_idletime
+ *
+ * Description:
+ *   This function returns the idle time.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The time in system ticks remaining for idle.
+ *   Zero means system is busy.
+ *
+ ****************************************************************************/
+
+uint32_t IRAM_ATTR up_get_idletime(void)
+{
+  uint32_t us;
+  uint64_t alarm_value;
+  uint64_t counter;
+  irqstate_t flags;
+
+  flags = enter_critical_section();
+
+  if (!g_timer_started)
+    {
+      us = 0;
+    }
+  else
+    {
+      alarm_value = tickless_getalarmvalue();
+      counter = tickless_getcounter();
+      if (alarm_value > counter)
+        {
+          us = CTICK_2_USEC(alarm_value - counter);
+        }
+      else
+        {
+          us = 0;
+        }
+    }
+
+  leave_critical_section(flags);
+
+  return us;
+}
+
+/****************************************************************************
+ * Name:  up_step_idletime
+ *
+ * Description:
+ *   Add system time by idletime_us.  The systimer's free-running counter
+ *   does not advance while the SoC is in light sleep, so the time spent
+ *   asleep has to be folded back in by force-loading the counter forward
+ *   once the CPU wakes back up.
+ *
+ * Input Parameters:
+ *   us - Idle time(us)
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void IRAM_ATTR up_step_idletime(uint32_t us)
+{
+  uint64_t step_counter;
+  uint64_t alarm_value;
+  irqstate_t flags;
+
+  DEBUGASSERT(g_timer_started);
+
+  flags = enter_critical_section();
+
+  alarm_value = tickless_getalarmvalue();
+  step_counter = USEC_2_CTICK((uint64_t)us) + tickless_getcounter();
+
+  DEBUGASSERT(step_counter <= alarm_value);
+
+  putreg32(step_counter & 0xffffffff, SYSTIMER_UNIT0_LOAD_LO_REG);
+  putreg32((step_counter >> 32) & 0xfffff, SYSTIMER_UNIT0_LOAD_HI_REG);
+  modifyreg32(SYSTIMER_UNIT0_LOAD_REG, 0, SYSTIMER_TIMER_UNIT0_LOAD);
+
+  leave_critical_section(flags);
+}
+
 #endif /* CONFIG_SCHED_TICKLESS */
