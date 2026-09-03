@@ -38,6 +38,7 @@
 #include <errno.h>
 #include <nuttx/fs/fs.h>
 #include <nuttx/himem/himem.h>
+#include <nuttx/power/pm.h>
 #include <arch/board/board.h>
 
 #include "espressif/esp_gpio.h"
@@ -79,6 +80,26 @@
 int esp32s3_bringup(void)
 {
   int ret;
+
+#ifdef CONFIG_PM
+  /* Cap the greedy governor at PM_STANDBY (light sleep) so it never
+   * free-falls into PM_SLEEP (real deep sleep, which wipes RAM and loses
+   * all running state). Only wake sources armed via
+   * CONFIG_PM_EXT0/EXT1_WAKEUP or CONFIG_PM_ULP_WAKEUP apply to PM_SLEEP;
+   * CONFIG_PM_GPIO_WAKEUP (what this board uses to let the LSM6DS3TRC's
+   * FIFO watermark interrupt wake the MCU) only covers PM_STANDBY.
+   *
+   * NOTE: pm_stay(domain, state) locks a *floor*, not a ceiling --
+   * greedy_governor_checkstate() (drivers/power/pm/greedy_governor.c)
+   * walks states from PM_NORMAL upward and stops at the first one whose
+   * wakelock queue is non-empty. Staying at PM_SLEEP itself (the deepest
+   * state) is a no-op: the walk still passes through PM_STANDBY on its
+   * way there. Staying at PM_STANDBY is what actually caps it, since the
+   * walk stops there instead of continuing on to PM_SLEEP.
+   */
+
+  pm_stay(PM_IDLE_DOMAIN, PM_STANDBY);
+#endif
 
 #ifdef CONFIG_ESPRESSIF_HR_TIMER
   ret = esp_hr_timer_init();
