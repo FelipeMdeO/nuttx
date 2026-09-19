@@ -877,22 +877,7 @@ static void lsm6ds3trc_fifo_worker_body(FAR struct lsm6ds3trc_dev_s *dev)
       return;
     }
 
-  /* The I2C bus can still be settling right after a light-sleep wake --
-   * this is the first transaction on it since then, and a bare retry is
-   * enough to ride that out.
-   */
-
-  for (i = 0; i < 3; i++)
-    {
-      err = lsm6ds3trc_read_bytes(dev, FIFO_STATUS1, status, sizeof(status));
-      if (err >= 0)
-        {
-          break;
-        }
-
-      nxsched_usleep(1000);
-    }
-
+  err = lsm6ds3trc_read_bytes(dev, FIFO_STATUS1, status, sizeof(status));
   if (err < 0)
     {
       nxmutex_unlock(&dev->devlock);
